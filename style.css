@@ -1,0 +1,1484 @@
+/* =========================================================================
+   Immersive UI v1.1.0
+   ========================================================================= */
+
+:root {
+  --dolp-panel-width: 280px;
+  --dolp-story-offset: 300px;
+  --dolp-accent: #ffd700;
+  --dolp-sidebar-height: 170px;
+  
+  /* Button Volume Overrides */
+  --dolp-btn-top: rgba(38, 38, 42, 0.98);
+  --dolp-btn-bot: rgba(27, 27, 31, 0.98);
+  --dolp-btn-top-hover: rgba(50, 50, 56, 0.98);
+  --dolp-btn-bot-hover: rgba(33, 33, 39, 0.98);
+  --dolp-btn-border: rgba(212, 176, 79, 0.22);
+  --dolp-btn-border-active: rgba(212, 176, 79, 0.40);
+  --dolp-btn-text: #e8e8e8;
+  --dolp-btn-gold: #d4b04f;
+  
+  /* Dynamic Theme Properties */
+  --dolp-bg: var(--850, #121215);
+  --dolp-border: var(--700, #3a3a42);
+  --dolp-card-bg: var(--800, #1b1b20);
+  --dolp-text: var(--100, #eee);
+  --dolp-text-muted: var(--300, #ccc);
+}
+
+/* Prevent unwanted horizontal overflow/bounce on mobile */
+html, body {
+  max-width: 100vw !important;
+}
+
+/* Native Palette: Midnight Dark Mode */
+[data-theme="midnight"],
+body.theme-midnight,
+body[data-theme="midnight"] {
+  --000: #ffffff;
+  --100: #f1f5f9;
+  --150: #cbd5e1;
+  --200: #94a3b8;
+  --300: #64748b;
+  --400: #475569;
+  --500: #334155;
+  --600: #2d2d3a;
+  --700: #22222d;
+  --750: #181820;
+  --800: #111116;
+  --850: #0d0d12;
+  --900: #07070a;
+
+  --red: #f43f5e;
+  --pink: #ec4899;
+  --pink-secondary: #f472b6;
+  --purple: #8b5cf6;
+  --purple-secondary: #a855f7;
+  --blue: #3b82f6;
+  --blue-secondary: #38bdf8;
+  --teal: #14b8a6;
+  --green: #22c55e;
+  --green-secondary: #4ade80;
+  --yellow: #eab308;
+  --gold: #eab308;
+
+  --link: #60a5fa;
+  --link-hover: #93c5fd;
+
+  --tooltip-background: #0d0d12;
+  --tooltip-border: #3f3f50;
+}
+
+/* -------------------------------------------------------------------------
+   Mod Active Overrides
+   ------------------------------------------------------------------------- */
+body.dolp-mod-active {
+  background-color: var(--dolp-bg) !important;
+  color: var(--dolp-text) !important;
+}
+
+body.dolp-mod-active #ui-bar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+/* Story and Passages Base Alignment */
+body #story,
+body #passages,
+body .passage {
+  position: static !important;
+  z-index: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  background-color: transparent !important;
+  color: var(--dolp-text) !important;
+}
+
+/* PC Mode Story Margins (Locked fixed position across Mod UI & Classic UI; no shifting on stow/unstow) */
+body:not(.dolp-mobile) #story {
+  margin-left: var(--dolp-story-offset, 300px) !important;
+  padding-left: 1.5em !important;
+  width: auto !important;
+  transition: none !important;
+}
+
+/* Mobile Mode Story Spacing (Locked fixed position across Mod UI & Classic UI; no shifting on stow/unstow) */
+body.dolp-mobile #story,
+body.dolp-mobile #dolp-sidebar ~ #story,
+body.dolp-mobile #ui-bar ~ #story {
+  margin-left: 0px !important;
+  padding-left: 3.5em !important;
+  width: auto !important;
+  transition: none !important;
+}
+
+/* Stacked Layout Modes (Story Below / Story Above) - Left Aligned Rounded Sidebar (280px) */
+body.dolp-mod-active.dolp-layout-below,
+body.dolp-mod-active.dolp-layout-above {
+  display: block !important;
+  width: 100% !important;
+}
+
+body.dolp-mod-active.dolp-layout-below #dolp-sidebar:not(.stowed) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  width: var(--dolp-panel-width, 280px) !important;
+  max-width: var(--dolp-panel-width, 280px) !important;
+  height: auto !important;
+  max-height: none !important;
+  z-index: 2 !important;
+  background: var(--dolp-bg) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--dolp-border) !important;
+  overflow: hidden !important;
+}
+
+body.dolp-mod-active.dolp-layout-below:not(.dolp-stowed):not(:has(#dolp-sidebar.stowed)) #story {
+  padding-top: calc(var(--dolp-sidebar-height, 170px) + 10px) !important;
+  padding-bottom: 0.5em !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.5em !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+body.dolp-mod-active.dolp-layout-above #dolp-sidebar:not(.stowed) {
+  position: fixed !important;
+  bottom: 0 !important;
+  top: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  width: var(--dolp-panel-width, 280px) !important;
+  max-width: var(--dolp-panel-width, 280px) !important;
+  height: auto !important;
+  max-height: none !important;
+  z-index: 2 !important;
+  background: var(--dolp-bg) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--dolp-border) !important;
+  overflow: hidden !important;
+}
+
+body.dolp-mod-active.dolp-layout-above:not(.dolp-stowed):not(:has(#dolp-sidebar.stowed)) #story {
+  padding-bottom: calc(var(--dolp-sidebar-height, 170px) + 10px) !important;
+  padding-top: 0.5em !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.5em !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+/* Hide Master Toggle Button in Below/Above Mode */
+body.dolp-layout-below #dolp-master-toggle,
+body.dolp-layout-above #dolp-master-toggle {
+  display: none !important;
+}
+
+/* Stowed Sidebar in Below/Above Mode Returns Up Top & Side Position */
+body.dolp-mod-active.dolp-layout-below.dolp-stowed #story,
+body.dolp-mod-active.dolp-layout-above.dolp-stowed #story,
+body.dolp-mod-active.dolp-layout-below:has(#dolp-sidebar.stowed) #story,
+body.dolp-mod-active.dolp-layout-above:has(#dolp-sidebar.stowed) #story,
+body.dolp-mod-active.dolp-layout-below #dolp-sidebar.stowed ~ #story,
+body.dolp-mod-active.dolp-layout-above #dolp-sidebar.stowed ~ #story {
+  padding-top: 1em !important;
+  padding-bottom: 1em !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Start Menu Banner Always Side-by-Side Regardless of Layout Setting */
+body.dolp-mod-active #dolp-sidebar.dolp-start-menu {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--dolp-panel-width, 280px) !important;
+  max-width: 95vw !important;
+  transform: none !important;
+  margin: 0 !important;
+  border-radius: 0 0 10px 0 !important;
+}
+
+body.dolp-mod-active:has(#dolp-sidebar.dolp-start-menu) #story {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-left: var(--dolp-story-offset, 300px) !important;
+}
+
+/* Horizontal panels layout in stacked mode with Attributes centered in middle */
+#dolp-panel-visuals { order: 1 !important; }
+#dolp-panel-attributes { order: 2 !important; }
+#dolp-panel-settings { order: 3 !important; }
+
+body.dolp-mod-active.dolp-layout-below #dolp-body,
+body.dolp-mod-active.dolp-layout-above #dolp-body {
+  display: block !important;
+  width: 100% !important;
+  max-height: calc(100vh - 70px) !important;
+  overflow-y: auto !important;
+}
+
+body.dolp-mod-active.dolp-layout-below .dolp-panel.active,
+body.dolp-mod-active.dolp-layout-above .dolp-panel.active {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Story Text Accent Color (Separate from UI Accent) */
+body.dolp-mod-active.dolp-custom-story-accent #story a:not([class*="red"]):not([class*="pink"]):not([class*="purple"]):not([class*="green"]):not([class*="blue"]) {
+  color: var(--dolp-story-accent) !important;
+}
+
+body.dolp-mod-active #storyCaptionDiv,
+body.dolp-mod-active #storyCaptionContent,
+body.dolp-mod-active #stats,
+body.dolp-mod-active #statmeters {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  z-index: 1 !important;
+  transform: none !important;
+}
+
+body.dolp-mod-active #storyCaptionContent #overlayButtons {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   Tray Container & Controls
+   ------------------------------------------------------------------------- */
+#ui-bar-tray {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  pointer-events: auto !important;
+  width: auto !important;
+  height: 34px !important;
+  z-index: 200 !important;
+  box-sizing: border-box !important;
+}
+
+body.dolp-mod-active #ui-bar-tray {
+  background: var(--dolp-card-bg) !important;
+  border: 1px solid var(--dolp-border) !important;
+  border-radius: 6px !important;
+  padding: 2px 36px 2px 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+body:not(.dolp-mod-active) #ui-bar-tray {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 2px 36px 2px 4px !important;
+  z-index: 10000 !important;
+}
+
+body:not(.dolp-mod-active) #ui-bar-history {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body:not(.dolp-mod-active) #ui-bar-history button:not(:disabled),
+body:not(.dolp-mod-active) #history-backward:not(:disabled),
+body:not(.dolp-mod-active) #history-forward:not(:disabled) {
+  color: #f1f5f9 !important;
+  border-color: #64748b !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+body:not(.dolp-mod-active) #ui-bar-history button:disabled,
+body:not(.dolp-mod-active) #history-backward:disabled,
+body:not(.dolp-mod-active) #history-forward:disabled,
+body:not(.dolp-mod-active) #history-backward[disabled],
+body:not(.dolp-mod-active) #history-forward[disabled],
+body:not(.dolp-mod-active) #history-backward[aria-disabled="true"],
+body:not(.dolp-mod-active) #history-forward[aria-disabled="true"] {
+  color: #475569 !important;
+  border-color: #334155 !important;
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+#dolp-sidebar.stowed #ui-bar-tray {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 2.2em !important;
+  left: 0 !important;
+  right: 0 !important;
+  justify-content: center !important;
+}
+
+#dolp-sidebar.stowed #ui-bar-history,
+#dolp-sidebar.stowed .dolp-ui-switch-btn {
+  display: none !important;
+}
+
+#ui-bar-history {
+  order: 1 !important;
+  position: static !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 200;
+}
+
+body.dolp-mod-active #ui-bar-history button,
+body.dolp-mod-active #history-backward,
+body.dolp-mod-active #history-forward {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: transparent !important;
+  color: var(--dolp-accent) !important;
+  border: 1px solid var(--dolp-border, rgba(255, 255, 255, 0.15)) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  margin: 0 !important;
+  font-size: 0.78em !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+body.dolp-mod-active #ui-bar-history button:hover,
+body.dolp-mod-active #history-backward:hover,
+body.dolp-mod-active #history-forward:hover {
+  background: var(--dolp-btn-hover, rgba(255, 255, 255, 0.1)) !important;
+  border-color: var(--dolp-accent) !important;
+}
+
+body.dolp-mod-active #ui-bar-history button:disabled,
+body.dolp-mod-active #history-backward:disabled,
+body.dolp-mod-active #history-forward:disabled,
+body.dolp-mod-active #history-backward[disabled],
+body.dolp-mod-active #history-forward[disabled],
+body.dolp-mod-active #history-backward[aria-disabled="true"],
+body.dolp-mod-active #history-forward[aria-disabled="true"] {
+  opacity: 0.15 !important;
+  color: #333338 !important;
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.03) !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.dolp-ui-switch-btn {
+  order: 2 !important;
+  position: relative !important;
+  background: transparent !important;
+  color: var(--dolp-accent) !important;
+  border: 1px solid var(--dolp-border, rgba(255, 255, 255, 0.15)) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  margin: 0 !important;
+  font-size: 0.72em !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+.dolp-ui-switch-btn:hover {
+  background: var(--dolp-accent) !important;
+  color: #000 !important;
+  border-color: var(--dolp-accent) !important;
+}
+
+#ui-bar-toggle {
+  order: 3 !important;
+  position: absolute !important;
+  top: 2px !important;
+  right: 2px !important;
+  width: 31.79px !important;
+  height: 31.65px !important;
+  min-width: 31.79px !important;
+  min-height: 31.65px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 200 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 1.05em !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  background-color: var(--dolp-card-bg, #1b1b20) !important;
+  color: var(--dolp-text, #eee) !important;
+  border: 1px solid var(--dolp-border, #3a3a42) !important;
+  border-radius: 4px !important;
+}
+
+#ui-bar-toggle:hover {
+  background-color: var(--dolp-btn-hover, #333) !important;
+  border-color: var(--dolp-accent) !important;
+}
+
+#ui-bar-toggle::before {
+  color: var(--dolp-text, #eee) !important;
+}
+
+/* -------------------------------------------------------------------------
+   Mod Sidebar Container
+   ------------------------------------------------------------------------- */
+body.dolp-mod-active #dolp-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--dolp-panel-width, 280px);
+  max-width: 95vw;
+  max-height: 100% !important;
+  z-index: 2 !important;
+  pointer-events: none;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Stowed Sidebar Returns to Side Position across ALL modes */
+body.dolp-mod-active #dolp-sidebar.stowed {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: 2.2em !important;
+  min-width: 2.2em !important;
+  max-width: 2.2em !important;
+  height: 100vh !important;
+  background: var(--dolp-bg) !important;
+  border-right: 1px solid var(--dolp-border) !important;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.5) !important;
+  z-index: 2 !important;
+  transform: none !important;
+  border-radius: 0 !important;
+}
+
+#dolp-sidebar.stowed #dolp-body,
+#dolp-sidebar.stowed #dolp-tab-bar,
+#dolp-sidebar.stowed #dolp-stats-container {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+#dolp-header {
+  pointer-events: auto;
+  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-top: 34px !important;
+  border-right: 1px solid var(--dolp-border) !important;
+  flex: 0 0 auto !important;
+}
+
+#dolp-stats-container {
+  width: 100%;
+  position: relative;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  border-right: 1px solid var(--dolp-border) !important;
+  box-sizing: border-box !important;
+  min-width: var(--dolp-panel-width, 280px);
+}
+
+body.dolp-mod-active #stats,
+#dolp-stats-container #stats {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  height: 1.8em !important;
+  line-height: 1.5em !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  border: 1px solid var(--dolp-border, #555) !important;
+  border-top: var(--dolp-border, #555) 2px solid !important;
+  border-bottom: var(--dolp-border, #555) 2px solid !important;
+  padding-top: 2px !important;
+  padding-bottom: 3px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  background-color: var(--dolp-bg, #000) !important;
+  z-index: 15 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  transition: height 0.2s ease !important;
+}
+
+body.dolp-mod-active #stats.statsExtended,
+body.dolp-mod-active #stats.dolp-stats-expanded,
+#dolp-stats-container.statsExtended #stats,
+#dolp-stats-container #stats.statsExtended {
+  height: 3.2em !important;
+}
+
+body.dolp-mod-active #stats .expanded,
+#dolp-stats-container #stats .expanded {
+  position: static !important;
+  scale: 1.1 !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+body.dolp-mod-active #stats .content,
+#dolp-stats-container #stats .content {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  width: auto !important;
+  flex: 0 1 auto !important;
+}
+
+body.dolp-mod-active #stats .first-row,
+body.dolp-mod-active #stats .second-row,
+#dolp-stats-container #stats .first-row,
+#dolp-stats-container #stats .second-row {
+  display: flex !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+body.dolp-mod-active #stats .first-row,
+#dolp-stats-container #stats .first-row {
+  justify-content: flex-start !important;
+}
+
+body.dolp-mod-active #stats .second-row,
+#dolp-stats-container #stats .second-row {
+  justify-content: center !important;
+  gap: 15px !important;
+}
+
+/* Tab Bar Styling */
+#dolp-tab-bar {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  background: var(--dolp-bg);
+  padding: 3px 3px 0 3px;
+  gap: 3px;
+  position: relative;
+  z-index: 15;
+  border-bottom: 1px solid var(--dolp-border) !important;
+  border-right: 1px solid var(--dolp-border) !important;
+  border-radius: 8px 8px 0 0 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: var(--dolp-panel-width, 280px);
+  overflow: hidden;
+}
+
+#dolp-sidebar.dolp-start-menu #dolp-tab-bar {
+  display: none !important;
+}
+
+.dolp-tab-btn {
+  flex: 1 1 0px !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 6px 2px !important;
+  font-size: 0.78em !important;
+  text-align: center !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: stretch !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--dolp-accent) !important;
+}
+
+.dolp-tab-btn:not(.active) {
+  background: linear-gradient(180deg, rgba(20, 20, 25, 0.95) 0%, rgba(12, 12, 16, 0.98) 100%) !important;
+  color: var(--dolp-text-muted, #888) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  opacity: 0.7 !important;
+}
+
+.dolp-tab-btn.active {
+  background: linear-gradient(180deg, var(--dolp-btn-top) 0%, var(--dolp-btn-bot) 100%) !important;
+  color: var(--dolp-accent) !important;
+  border-color: var(--dolp-accent) !important;
+  box-shadow: inset 0 -2px 0 var(--dolp-accent) !important;
+  opacity: 1 !important;
+}
+
+.dolp-toggle-btn, #dolp-master-toggle {
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  padding: 6px 0 !important;
+  text-align: center !important;
+  font-size: 0.75em !important;
+  align-self: stretch !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Body Container fits panels cleanly without empty block overlays */
+#dolp-body {
+  pointer-events: auto;
+  background: var(--dolp-bg);
+  border-right: 1px solid var(--dolp-border);
+  border-bottom: 1px solid var(--dolp-border);
+  border-radius: 0 0 10px 10px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 70px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 8px !important;
+  padding-bottom: 1px !important;
+  font-size: inherit;
+  line-height: inherit;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  scrollbar-width: thin;
+  scrollbar-color: var(--dolp-border) transparent;
+  min-width: var(--dolp-panel-width, 280px);
+}
+
+/* Panel Closed Isolation - Buttons do not bleed or stretch into other panels */
+.dolp-panel:not(.active) {
+  display: none !important;
+  max-height: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.dolp-panel.active {
+  display: block !important;
+  max-height: 1200px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-bottom: 8px !important;
+  padding: 4px !important;
+  pointer-events: auto;
+  border-radius: 8px !important;
+  box-sizing: border-box;
+  color: var(--dolp-text);
+  font-size: inherit;
+  line-height: inherit;
+}
+
+#dolp-panel-settings.active {
+  overflow: visible !important;
+}
+
+#dolp-panel-visuals.active {
+  padding: 0 !important;
+  margin: -8px -8px 12px -8px !important;
+  width: calc(100% + 16px) !important;
+  overflow-x: hidden !important;
+}
+
+#dolp-sidebar:not(.stowed) #mobileStats {
+  display: none !important;
+}
+
+/* Stowed Mobile Stats Hover & Click Enablement */
+#dolp-sidebar.stowed #mobileStats,
+#dolp-sidebar.stowed #mobileStats * {
+  pointer-events: auto !important;
+}
+
+#dolp-sidebar.stowed #mobileStats {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 2.2em !important;
+  padding: 6px 0 !important;
+  margin: 0 !important;
+  background: var(--dolp-bg) !important;
+  z-index: 15 !important;
+  transition: opacity 0.3s ease 0.1s !important;
+}
+
+#dolp-sidebar.stowed #mobileStats .stat {
+  width: 1.8em !important;
+  text-align: center !important;
+  margin-top: 2px !important;
+  font-size: 1.1em !important;
+  cursor: pointer !important;
+}
+
+#dolp-sidebar.stowed #mobileStats #weatherIcon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 24px !important;
+  position: relative !important;
+  margin: 0 auto !important;
+}
+
+#dolp-sidebar.stowed #mobileStats #weatherIcon img {
+  position: relative !important;
+  margin: 0 auto !important;
+}
+
+
+/* -------------------------------------------------------------------------
+   Visual Stage
+   ------------------------------------------------------------------------- */
+#dolp-visual-stage {
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 192px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: var(--dolp-card-bg, #1b1b20) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--dolp-border) !important;
+  box-sizing: border-box !important;
+}
+
+#dolp-visual-stage #canvasSkybox {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 192px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+#dolp-visual-stage #canvasSkybox canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 64px !important;
+  height: 192px !important;
+}
+
+#sidebar-img-container,
+#dolp-visual-stage #sidebar-img-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 192px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 2 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+#img,
+#dolp-visual-stage #img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 64px !important;
+  width: calc(100% - 64px) !important;
+  height: 192px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 3 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+#img canvas,
+#dolp-visual-stage #img canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: -32px !important;
+}
+
+body.dolp-mod-active #characterTemperature,
+body.dolp-mod-active #characterTemperatureTooltip,
+body.dolp-mod-active #genderAppearance,
+body.dolp-mod-active #imgInv,
+body.dolp-mod-active .char-light {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Sideview Mirror Host */
+#dolp-sv-host {
+  display: block;
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 0 !important;
+  height: 100vh !important;
+  overflow: visible !important;
+  z-index: -2 !important;
+  pointer-events: none !important;
+}
+
+body.dolp-sv-disabled #dolp-sv-host {
+  display: none !important;
+}
+
+#dolp-sv-inner {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 64px !important;
+  height: 192px !important;
+  transform-origin: top right !important;
+  overflow: visible !important;
+  will-change: transform;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent     0%,
+    rgba(0,0,0,.55) 30%,
+    rgba(0,0,0,.9)  65%,
+    black           100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent     0%,
+    rgba(0,0,0,.55) 30%,
+    rgba(0,0,0,.9)  65%,
+    black           100%
+  );
+}
+
+/* Left Sideview Mirror Gradient Mask */
+#dolp-sv-host.sv-left #dolp-sv-inner {
+  left: 0 !important;
+  right: auto !important;
+  transform-origin: top left !important;
+  -webkit-mask-image: linear-gradient(
+    to left,
+    transparent     0%,
+    rgba(0,0,0,.55) 30%,
+    rgba(0,0,0,.9)  65%,
+    black           100%
+  ) !important;
+  mask-image: linear-gradient(
+    to left,
+    transparent     0%,
+    rgba(0,0,0,.55) 30%,
+    rgba(0,0,0,.9)  65%,
+    black           100%
+  ) !important;
+}
+
+#dolp-sv-inner canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* -------------------------------------------------------------------------
+   Description, Statmeters, & Badges
+   ------------------------------------------------------------------------- */
+#sidebar-look-description + br {
+  display: none !important;
+}
+
+.dolp-statmeter-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+}
+
+.dolp-statmeter-arrow {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--dolp-accent) !important;
+  border-radius: 4px !important;
+  padding: 2px 14px !important;
+  font-size: 0.8em !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.dolp-statmeter-arrow:hover {
+  background: linear-gradient(180deg, var(--dolp-btn-top) 0%, var(--dolp-btn-bot) 100%) !important;
+  border-color: var(--dolp-accent) !important;
+  color: var(--dolp-accent) !important;
+  box-shadow: 0 0 8px var(--dolp-accent) !important;
+}
+
+body.dolp-mod-active #statmeters {
+  visibility: visible !important;
+  display: block !important;
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+  padding: 0 8px !important;
+  width: 100% !important;
+  clear: both !important;
+  position: relative !important;
+  z-index: 1 !important;
+  box-sizing: border-box !important;
+}
+
+body.dolp-mod-active #statmeters > div {
+  display: block !important;
+  visibility: visible !important;
+  margin-bottom: 3px !important;
+  font-size: 0.82em !important;
+  color: var(--dolp-text) !important;
+}
+
+/* Statbar Meter Thickness & Fills */
+body.dolp-mod-active #dolp-sidebar .meter {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 12px !important;
+  background-color: var(--dolp-card-bg) !important;
+  border: 1px solid var(--dolp-border) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  margin-top: 2px !important;
+  box-sizing: border-box !important;
+}
+
+body.dolp-mod-active #dolp-sidebar .meter > div,
+body.dolp-mod-active #dolp-sidebar .meter > span,
+body.dolp-mod-active #dolp-sidebar .meter .fill,
+body.dolp-mod-active #dolp-sidebar .meter .red,
+body.dolp-mod-active #dolp-sidebar .meter .green,
+body.dolp-mod-active #dolp-sidebar .meter .teal,
+body.dolp-mod-active #dolp-sidebar .meter .gold,
+body.dolp-mod-active #dolp-sidebar .meter .yellow,
+body.dolp-mod-active #dolp-sidebar .meter .pink,
+body.dolp-mod-active #dolp-sidebar .meter .purple,
+body.dolp-mod-active #dolp-sidebar .meter .blue,
+body.dolp-mod-active #dolp-sidebar .meter .lblue {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* Compact Statbars Toggle Height */
+body.dolp-mod-active.dolp-compact-stats #dolp-sidebar .meter {
+  height: 7px !important;
+  border-radius: 3px !important;
+}
+
+/* Collapsed Statmeters with Air (A) Badge */
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0 16px !important;
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed > div {
+  flex: 1 1 0px !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--dolp-card-bg) !important;
+  border: 1px solid var(--dolp-border) !important;
+  border-radius: 2px !important;
+  padding: 0 3px !important;
+  height: 18px !important;
+  line-height: 16px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  font-size: 0.80em !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  cursor: help !important;
+}
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed > div > * {
+  display: none !important;
+}
+
+/* Statmeter Badges Initials including Air (A) */
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #aircaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #oxygencaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="air"]::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="oxygen"]::before { content: "A"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #paincaption::before { content: "P"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #arousalcaption::before { content: "Ar"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #tirednesscaption::before { content: "F"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #stresscaption::before { content: "S"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #traumacaption::before { content: "T"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #controlcaption::before { content: "C"; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #allurecaption::before { content: "Al"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #pleasurecaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="pleasure"]::before { content: "Pl"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #innocencecaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="innocence"]::before { content: "I"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #willpowercaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="willpower"]::before { content: "W"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #druggedcaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="drugged"]::before { content: "Dg"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #hallucinogencaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="hallucinogen"]::before { content: "H"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed #drunkcaption::before,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed [id*="drunk"]::before { content: "Dk"; }
+
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .green { color: var(--green, #2ecc71) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .red { color: var(--red, #e74c3c) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .teal { color: var(--teal, #1abc9c) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .gold,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .yellow { color: var(--gold, #f1c40f) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .pink { color: var(--pink, #e84393) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .purple { color: var(--purple-secondary, #9b59b6) !important; }
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .blue,
+body.dolp-mod-active #statmeters.dolp-statmeters-collapsed .lblue { color: var(--blue-secondary, #3498db) !important; }
+
+
+/* Attributes Panel */
+#dolp-panel-attributes {
+  overflow-x: hidden !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+body.dolp-mod-active #dolp-panel-attributes #storyCaptionContent,
+body.dolp-mod-active #dolp-panel-attributes #storyCaptionContent * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+body.dolp-mod-active #dolp-panel-attributes #storyCaptionContent {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  scrollbar-width: none !important;
+  padding: 4px !important;
+  margin: 0 0 10px 0 !important;
+  color: var(--dolp-text) !important;
+}
+
+body:not(.dolp-mod-active) #storyCaptionContent {
+  overflow-y: auto !important;
+}
+
+body:not(.dolp-mod-active) #statmeters {
+  margin-top: 2px !important;
+  margin-bottom: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+/* -------------------------------------------------------------------------
+   Button Grid Alignment & Hover Colors
+   ------------------------------------------------------------------------- */
+.dolp-btn-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-btn-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+.dolp-btn-grid button,
+.dolp-btn-grid .macro-button,
+.dolp-btn-grid a,
+#dolp-ui-settings-btn,
+.dolp-tab-btn,
+.dolp-toggle-btn,
+body.dolp-mod-active #startCaption button,
+body.dolp-mod-active #startCaption .macro-button {
+  width: 100% !important;
+  height: 100% !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  min-height: 38px !important;
+  padding: 8px 4px !important;
+  font-size: 0.82em !important;
+  font-weight: bold !important;
+  line-height: 1.25 !important;
+  
+  background: linear-gradient(180deg, var(--dolp-btn-top) 0%, var(--dolp-btn-bot) 100%) !important;
+  border: 1px solid var(--dolp-btn-border) !important;
+  border-radius: 6px !important;
+  color: var(--dolp-accent, var(--dolp-btn-text)) !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: visible !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.dolp-tab-btn, .dolp-toggle-btn {
+  min-height: auto !important;
+}
+
+.dolp-btn-grid .dolp-btn-full,
+.dolp-btn-grid button.dolp-btn-full,
+.dolp-btn-grid a.dolp-btn-full {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-height: 40px !important;
+  font-size: 0.88em !important;
+}
+
+/* Button Hover State - Follows UI Accent Color */
+.dolp-btn-grid button:hover,
+.dolp-btn-grid .macro-button:hover,
+.dolp-btn-grid a:hover,
+#dolp-ui-settings-btn:hover,
+body.dolp-mod-active #startCaption button:hover {
+  background: linear-gradient(180deg, var(--dolp-btn-top-hover) 0%, var(--dolp-btn-bot-hover) 100%) !important;
+  border-color: var(--dolp-accent) !important;
+  color: var(--dolp-accent) !important;
+  box-shadow: 0 0 8px var(--dolp-accent) !important;
+}
+
+#dolp-ui-settings-btn {
+  width: 100% !important;
+  margin-bottom: 8px !important;
+  font-size: 0.88em !important;
+}
+
+#dolp-sidebar.dolp-start-menu #dolp-body {
+  max-height: none !important;
+  height: auto !important;
+  padding-bottom: 0 !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+#dolp-sidebar.dolp-start-menu .dolp-panel.active {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+#dolp-sidebar #startCaption,
+body.dolp-mod-active #startCaption {
+  background: var(--dolp-card-bg) !important;
+  border: 1px solid var(--dolp-accent) !important;
+  border-radius: 8px !important;
+  padding: 12px 8px !important;
+  text-align: center !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  box-sizing: border-box !important;
+  width: calc(100% - 12px) !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+#startCaption h1, #startCaption h2, #startCaption .title {
+  color: var(--dolp-accent) !important;
+  font-family: inherit !important;
+  margin-bottom: 12px !important;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3) !important;
+}
+
+#startCaption * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+body.dolp-mod-active #ui-dialog-body {
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+@media screen and (min-width: 1025px) {
+  body.dolp-mod-active #modloader-btn,
+  body.dolp-mod-active #mod-loader-button {
+    right: 70px !important;
+  }
+}
+
+/* UI SETTINGS Overlay Window*/
+#dolp-ui-settings-overlay-container {
+  position: fixed !important;
+  z-index: 50 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  padding: 20px 10px !important;
+  box-sizing: border-box !important;
+}
+
+#dolp-ui-settings-overlay-container.hidden {
+  display: none !important;
+}
+
+#dolp-ui-settings-window {
+  position: relative !important;
+  width: 90vw !important;
+  max-width: 480px !important;
+  max-height: 80vh !important;
+  max-height: 70dvh !important;
+  margin: auto !important;
+  background: var(--dolp-bg) !important;
+  border: 2px solid var(--dolp-accent) !important;
+  border-radius: 8px !important;
+  padding: 16px 16px 28px 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  color: var(--dolp-text) !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+.dolp-custom-box,
+.dolp-custom-row,
+.dolp-io-row {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix Export/Import textarea and button container overflowing on mobile */
+.dolp-io-row {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-io-row textarea,
+.dolp-io-row div {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-io-row button {
+  flex: 1 1 0px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-custom-box {
+  border: 1px solid var(--dolp-border);
+  background: var(--dolp-card-bg);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.dolp-custom-title {
+  margin: 0 0 10px 0;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: var(--dolp-accent);
+  border-bottom: 1px solid var(--dolp-border);
+  padding-bottom: 4px;
+}
+
+.dolp-slider-header,
+.dolp-custom-row > div:first-child {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 12px !important;
+  margin-bottom: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-slider-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-custom-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 10px;
+  font-size: 0.88em;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-custom-row label {
+  color: var(--dolp-text-muted);
+}
+
+.dolp-custom-row select,
+.dolp-custom-row input[type="text"],
+.dolp-custom-row textarea,
+.dolp-custom-row input[type="checkbox"],
+.dolp-custom-row input[type="color"],
+.dolp-custom-row input[type="range"] {
+  background: var(--dolp-bg);
+  color: var(--dolp-text);
+  border: 1px solid var(--dolp-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 0.9em;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dolp-custom-row select,
+.dolp-custom-row textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.dolp-custom-row input[type="color"] {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  cursor: pointer;
+}
