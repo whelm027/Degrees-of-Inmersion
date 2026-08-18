@@ -6,21 +6,22 @@ The sidebar is organized into three easy-to-use tabs for Visuals, Attributes, an
 You can customize your interface using several preset themes, or create your own using custom color pickers. You can pick independent colors for the UI background, button inner colors, accent highlights, and story link text. The mod also includes a preset manager that lets you save your custom themes or export them as codes to share and load anywhere.
 
 You can also adjust the story text position using an offset slider. If you are playing on mobile or a vertical screen, you can set the story to display above or below the sidebar instead of side-by-side. This works best with the zoom size setting in options. Also it’s worth noting that it’s best if the option of “enlarge sideview canvas” is disabled before using this mod as it’s not supported, so it’s recommended to use the previous option instead. 
-<div style="display: flex; overflow-x: auto; gap: 12px; scroll-snap-type: x mandatory; padding: 10px 0;">
 
-  <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2" alt="blood" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<div style="display: flex; overflow-x: auto; gap: 10px;">
 
-  <img src="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81" alt="monochrom" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2" alt="blood" width="600">
 
-  <img src="https://github.com/user-attachments/assets/d2533dd4-a12b-439b-8ce6-b04390ba02eb" alt="meadoe" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81" alt="monochrom" width="600">
 
-  <img src="https://github.com/user-attachments/assets/c7b322b7-41d0-41b4-b952-4b28ce45888e" alt="pub" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/d2533dd4-a12b-439b-8ce6-b04390ba02eb" alt="meadow" width="600">
 
-  <img src="https://github.com/user-attachments/assets/20419d8b-eb9a-439a-a910-d6a49adf35ea" alt="gren" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/c7b322b7-41d0-41b4-b952-4b28ce45888e" alt="pub" width="600">
 
-  <img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" alt="Dance" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/20419d8b-eb9a-4395-a910-d6a49adf35ea" alt="gren" width="600">
 
-  <img src="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472" alt="blue" style="width: 800px; max-width: none; height: auto; flex-shrink: 0; scroll-snap-align: start;" />
+<img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" alt="Dance" width="600">
+
+<img src="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472" alt="blue" width="600">
 
 </div>
 
