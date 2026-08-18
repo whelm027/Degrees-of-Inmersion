@@ -9,11 +9,11 @@ You can also adjust the story text position using an offset slider. If you are p
 
 
 
-## How to Use
+### How to Use
 
 In the sidebar, open the Settings tab and click UI SETTINGS to customize your layout. You can click the Mod UI / Classic UI toggle button in the top controls whenever you want to switch between this mod and the default game appearance. 
 
 
-## How to install
+### How to install
 
 It works like any other mod, just download the latest release, DONT unzip it, and load it from the menu in modloader.
