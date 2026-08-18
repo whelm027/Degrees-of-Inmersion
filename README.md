@@ -8,11 +8,7 @@ You can customize your interface using several preset themes, or create your own
 You can also adjust the story text position using an offset slider. If you are playing on mobile or a vertical screen, you can set the story to display above or below the sidebar instead of side-by-side. This works best with the zoom size setting in options. Also it’s worth noting that it’s best if the option of “enlarge sideview canvas” is disabled before using this mod as it’s not supported, so it’s recommended to use the previous option instead. 
 ## Showcase
 
-### Video
-
 https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
-
-### Screenshots
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2">
