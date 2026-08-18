@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/YOUR-VIDEO-ID.mp4
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2">
-    <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-94c1819c29e2" width="100%">
+    <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2" width="100%">
   </a>
 </p>
 
