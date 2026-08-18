@@ -1,3 +1,4 @@
+
 # Degrees-of-Inmersion
 This is a Degrees of Lewdity mod made to be used with modloader, it should work with most mods but you should back-up your saves before using this. 
 
@@ -31,8 +32,8 @@ https://github.com/user-attachments/assets/YOUR-VIDEO-ID.mp4
 </p>
 
 <p align="center">
-  <a href="https://github.com/user-attachments/assets/20419d8b-eb9a-439a-910-d6a49adf35ea">
-    <img src="https://github.com/user-attachments/assets/20419d8b-eb9a-439a-910-d6a49adf35ea" width="49%">
+  <a href="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140">
+    <img src="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140" width="49%">
   </a>
   <a href="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005">
     <img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" width="49%">
