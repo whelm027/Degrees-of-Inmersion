@@ -16,24 +16,36 @@ https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
   </a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f">
-    <img src="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f" width="30%">
-  </a>
-  <a href="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140">
-    <img src="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140" width="34%">
-  </a>
-  <a href="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005">
-    <img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" width="34%">
-  </a>
-</p>
+<table>
+<tr>
+<td width="30%" valign="middle">
+
+<a href="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f">
+  <img src="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f" width="100%">
+</a>
+
+</td>
+<td width="70%">
+
+<a href="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140">
+  <img src="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140" width="100%">
+</a>
+
+<br>
+
+<a href="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005">
+  <img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" width="100%">
+</a>
+
+</td>
+</tr>
+</table>
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81">
     <img src="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81" width="100%">
   </a>
 </p>
-
 ### How to Use
 
 In the sidebar, open the Settings tab and click UI SETTINGS to customize your layout. You can click the Mod UI / Classic UI toggle button in the top controls whenever you want to switch between this mod and the default game appearance. 
