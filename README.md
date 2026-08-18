@@ -6,7 +6,7 @@ The sidebar is organized into three easy-to-use tabs for Visuals, Attributes, an
 You can customize your interface using several preset themes, or create your own using custom color pickers. You can pick independent colors for the UI background, button inner colors, accent highlights, and story link text. The mod also includes a preset manager that lets you save your custom themes or export them as codes to share and load anywhere.
 
 You can also adjust the story text position using an offset slider. If you are playing on mobile or a vertical screen, you can set the story to display above or below the sidebar instead of side-by-side. This works best with the zoom size setting in options. Also it’s worth noting that it’s best if the option of “enlarge sideview canvas” is disabled before using this mod as it’s not supported, so it’s recommended to use the previous option instead. 
-<img width="1917" height="967" alt="124" src="https://github.com/user-attachments/assets/af35df68-c762-40e2-ac22-bfe6c8e0c86a" />
+
 
 
 ## How to Use
