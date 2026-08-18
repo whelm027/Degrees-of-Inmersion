@@ -46,6 +46,7 @@ https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
     <img src="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81" width="100%">
   </a>
 </p>
+
 ### How to Use
 
 In the sidebar, open the Settings tab and click UI SETTINGS to customize your layout. You can click the Mod UI / Classic UI toggle button in the top controls whenever you want to switch between this mod and the default game appearance. 
