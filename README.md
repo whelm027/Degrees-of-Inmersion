@@ -10,14 +10,14 @@ You can also adjust the story text position using an offset slider. If you are p
 
 ### Video
 
-<!-- Replace with your uploaded GitHub video URL -->
+<!-- Replace with your GitHub-uploaded video URL -->
 https://github.com/user-attachments/assets/YOUR-VIDEO-ID.mp4
 
 ### Screenshots
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2">
-    <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2" width="100%">
+    <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-94c1819c29e2" width="100%">
   </a>
 </p>
 
@@ -43,11 +43,13 @@ https://github.com/user-attachments/assets/YOUR-VIDEO-ID.mp4
   <a href="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005">
     <img src="https://github.com/user-attachments/assets/1af96a88-b886-4831-84af-b3f8a8559005" width="49%">
   </a>
-  <a href="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472">
-    <img src="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472" width="49%">
-  </a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472">
+    <img src="https://github.com/user-attachments/assets/e89b4c55-0ec7-4204-9aa8-b0ff1ceb8472" width="100%">
+  </a>
+</p>
 ### How to Use
 
 In the sidebar, open the Settings tab and click UI SETTINGS to customize your layout. You can click the Mod UI / Classic UI toggle button in the top controls whenever you want to switch between this mod and the default game appearance. 
