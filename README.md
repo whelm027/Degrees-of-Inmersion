@@ -15,16 +15,7 @@ https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
     <img src="https://github.com/user-attachments/assets/fd532728-87c8-4ea0-96a0-94c1819c29e2" width="100%">
   </a>
 </p>
-
-<p align="center">
-  <a href="https://github.com/user-attachments/assets/d2533dd4-a12b-439b-8ce6-b04390ba02eb">
-    <img src="https://github.com/user-attachments/assets/d2533dd4-a12b-439b-8ce6-b04390ba02eb" width="49%">
-  </a>
-  <a href="https://github.com/user-attachments/assets/c7b322b7-41d0-41b4-b952-4b28ce45888e">
-    <img src="https://github.com/user-attachments/assets/c7b322b7-41d0-41b4-b952-4b28ce45888e" width="49%">
-  </a>
-</p>
-
+<img width="30%" alt="mobile" src="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f" />
 <p align="center">
   <a href="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140">
     <img src="https://github.com/user-attachments/assets/f2ab6e7b-578c-4a5c-9cec-4d3121a1a140" width="49%">
@@ -39,7 +30,7 @@ https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
     <img src="https://github.com/user-attachments/assets/06def4f6-395e-4d7a-91f0-edb7e9411c81" width="100%">
   </a>
 </p>
-<img width="30%" alt="mobile" src="https://github.com/user-attachments/assets/58d0c2f6-9791-4f1f-96bd-51903cc3018f" />
+
 
 ### How to Use
 
