@@ -7,8 +7,8 @@ You can customize your interface using several preset themes, or create your own
 
 You can also adjust the story text position using an offset slider. If you are playing on mobile or a vertical screen, you can set the story to display above or below the sidebar instead of side-by-side. This works best with the zoom size setting in options. Also it’s worth noting that it’s best if the option of “enlarge sideview canvas” is disabled before using this mod as it’s not supported, so it’s recommended to use the previous option instead. 
 
-<img src="https://github.com/user-attachments/assets/e09d2600-24da-49d6-bb04-19f208627c09" width="30%"></img> <img src="" width="30%"></img> <img src="" width="30%"></img> <img src="https://cloud.githubusercontent.com/assets/4307137/10105288/28698fae-63ae-11e5-8ba7-a62360a8e8a7.png" width="30%"></img> <img src="https://cloud.githubusercontent.com/assets/4307137/10105283/251b6868-63ae-11e5-9918-b789d9d682ec.png" width="30%"></img> <img src="https://cloud.githubusercontent.com/assets/4307137/10105290/2a183f3a-63ae-11e5-9380-50d9f6d8afd6.png" width="30%"></img><img src="https://cloud.githubusercontent.com/assets/4307137/10105288/28698fae-63ae-11e5-8ba7-a62360a8e8a7.png" width="30%"></img> <img src="https://cloud.githubusercontent.com/assets/4307137/10105283/251b6868-63ae-11e5-9918-b789d9d682ec.png" width="30%"></img> <img src="https://cloud.githubusercontent.com/assets/4307137/10105290/2a183f3a-63ae-11e5-9380-50d9f6d8afd6.png" width="30%"></img>
-
+<img src="https://github.com/user-attachments/assets/e09d2600-24da-49d6-bb04-19f208627c09" width="45%"></img> <img src= "https://github.com/user-attachments/assets/806d14d4-e23b-4a0c-a397-657d4bac1830" width="45%">
+></img> <img src="https://github.com/user-attachments/assets/24e41f3f-865c-4100-8e85-d17777b89877" width="45%"></img> <img src= width="45%"></img> <img src= width="45%"></img> <img src= width="45%"></img> 
 
 
 ### How to Use
