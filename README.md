@@ -1,4 +1,3 @@
-
 # Degrees-of-Inmersion
 This is a Degrees of Lewdity mod made to be used with modloader, it should work with most mods but you should back-up your saves before using this. 
 
@@ -11,8 +10,7 @@ You can also adjust the story text position using an offset slider. If you are p
 
 ### Video
 
-<!-- Replace with your GitHub-uploaded video URL -->
-https://github.com/user-attachments/assets/YOUR-VIDEO-ID.mp4
+https://github.com/user-attachments/assets/aa5ad84e-9fdc-4c18-95c4-0fdd8cf18e57
 
 ### Screenshots
 
