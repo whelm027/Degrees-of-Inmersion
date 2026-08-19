@@ -1,4 +1,4 @@
-# Degrees-of-Inmersion
+# Degrees-of-Immersion
 This is a Degrees of Lewdity mod made to be used with modloader, it should work with most mods but you should back-up your saves before using this. 
 
 The sidebar is organized into three easy-to-use tabs for Visuals, Attributes, and Settings. A toggleable Sideview Mirror feature can also project the location you’re in at edge of your screen with adjustable opacity. 
