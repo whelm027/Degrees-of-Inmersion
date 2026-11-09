@@ -1,30 +1,38 @@
 /* =========================================================================
-   Immersive UI v1.1.0
+   Immersive UI v1.2.3
    ========================================================================= */
 
 (function () {
   "use strict";
 
-  var isStowed = false;
-
   function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (window.innerWidth <= 1024);
+    var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    return isMobileUA || (hasTouch && window.innerWidth <= 1024);
   }
+
+  var isMobileDefault = isMobileDevice();
 
   var config = {
     useModUI: true,
-    storyLayout: "overlay", // "overlay", "below", "above"
+    isStowed: false,
+    storyLayout: isMobileDefault ? "below" : "overlay", // "overlay", "below", "above"
     sideviewEnabled: true,
     sideviewOpacity: 100,
     sideviewSide: "right",
     compactStats: false,
     statmetersCollapsed: false,
-    storyOffset: isMobileDevice() ? 0 : 300,
+    statsInVisuals: false,
+    disablePaperdoll: false,
+    panelWidth: "280px",
+    sidebarLeftOffset: "0px",
+    storyOffset: isMobileDefault ? 20 : 300,
     btnTheme: "default",
+    btnStyle: "solid", // "solid", "flat", "neon", "clay", "radiant", "cyber"
     customBtnColor: "#26262a",
     accentColor: "gold",
     customAccent: "#ffd700",
-    storyAccentColor: "ui", // "ui" = match UI accent, "game" = native default
+    storyAccentColor: "ui",
     customStoryAccent: "#ffd700",
     baseTheme: "midnight",
     customBase: "#0d0d12",
@@ -54,13 +62,75 @@
     nordic:   { bg: "#0f172a", card: "#1e293b", btn: "#334155", btnHover: "#475569", border: "#334155", text: "#f8fafc", textMuted: "#94a3b8" }
   };
 
-  var BTN_MAP = {
-    default:  { top: "rgba(38, 38, 42, 0.98)", bot: "rgba(27, 27, 31, 0.98)", hoverTop: "rgba(50, 50, 56, 0.98)", hoverBot: "rgba(33, 33, 39, 0.98)", border: "rgba(212, 176, 79, 0.22)", hoverBorder: "rgba(212, 176, 79, 0.40)", text: "#e8e8e8", gold: "#d4b04f" },
-    purple:   { top: "rgba(45, 30, 60, 0.98)", bot: "rgba(25, 18, 38, 0.98)", hoverTop: "rgba(60, 40, 80, 0.98)", hoverBot: "rgba(35, 24, 50, 0.98)", border: "rgba(168, 85, 247, 0.3)", hoverBorder: "rgba(168, 85, 247, 0.6)", text: "#f3e8ff", gold: "#c084fc" },
-    crimson:  { top: "rgba(60, 25, 30, 0.98)", bot: "rgba(35, 15, 20, 0.98)", hoverTop: "rgba(80, 32, 40, 0.98)", hoverBot: "rgba(48, 20, 26, 0.98)", border: "rgba(244, 63, 94, 0.3)", hoverBorder: "rgba(244, 63, 94, 0.6)", text: "#ffe4e6", gold: "#fb7185" },
-    navy:     { top: "rgba(25, 40, 65, 0.98)", bot: "rgba(15, 25, 45, 0.98)", hoverTop: "rgba(32, 55, 90, 0.98)", hoverBot: "rgba(20, 35, 60, 0.98)", border: "rgba(59, 130, 246, 0.3)", hoverBorder: "rgba(59, 130, 246, 0.6)", text: "#e0f2fe", gold: "#38bdf8" },
-    emerald:  { top: "rgba(25, 50, 35, 0.98)", bot: "rgba(15, 30, 22, 0.98)", hoverTop: "rgba(32, 68, 48, 0.98)", hoverBot: "rgba(20, 42, 30, 0.98)", border: "rgba(34, 197, 94, 0.3)", hoverBorder: "rgba(34, 197, 94, 0.6)", text: "#dcfce7", gold: "#4ade80" }
-  };
+  function hexToRgb(hex) {
+    if (!hex || hex.charAt(0) !== "#") return "255, 215, 0";
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+    var num = parseInt(hex, 16);
+    if (isNaN(num)) return "255, 215, 0";
+    return ((num >> 16) & 255) + ", " + ((num >> 8) & 255) + ", " + (num & 255);
+  }
+
+  function normalizeHex(hex) {
+    if (typeof hex !== "string") return null;
+    var h = hex.trim();
+    if (h.charAt(0) !== "#") h = "#" + h;
+    if (h.length === 4) {
+      h = "#" + h.slice(1).split("").map(function (c) { return c + c; }).join("");
+    }
+    if (!/^#[0-9a-fA-F]{6}$/.test(h)) return null;
+    return h.toLowerCase();
+  }
+
+  function hexToRgbObj(hex) {
+    var h = normalizeHex(hex) || "#ffd700";
+    var num = parseInt(h.slice(1), 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
+  function rgbToHex(r, g, b) {
+    function c(v) {
+      var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return s.length === 1 ? "0" + s : s;
+    }
+    return "#" + c(r) + c(g) + c(b);
+  }
+
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var d = max - min;
+    var h = 0;
+    if (d !== 0) {
+      if (max === r) h = ((g - b) / d) % 6;
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+    }
+    var s = max === 0 ? 0 : d / max;
+    var v = max;
+    return { h: h, s: s, v: v };
+  }
+
+  function hsvToRgb(h, s, v) {
+    var c = v * s;
+    var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    var m = v - c;
+    var r, g, b;
+    if (h < 60)       { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else              { r = c; g = 0; b = x; }
+    return { r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 };
+  }
+
+  function hexToHsv(hex) {
+    var rgb = hexToRgbObj(hex);
+    return rgbToHsv(rgb.r, rgb.g, rgb.b);
+  }
 
   function getActiveAccentHex() {
     if (config.accentColor === "custom") return config.customAccent || "#ffd700";
@@ -135,29 +205,107 @@
       return Math.max(0, Math.min(255, val + amount));
     }
 
-    var topR = clampShift(r, 22), topG = clampShift(g, 22), topB = clampShift(b, 22);
-    var botR = clampShift(r, -12), botG = clampShift(g, -12), botB = clampShift(b, -12);
-    var hTopR = clampShift(r, 38), hTopG = clampShift(g, 38), hTopB = clampShift(b, 38);
-    var hBotR = clampShift(r, 8), hBotG = clampShift(g, 8), hBotB = clampShift(b, 8);
+    var style = config.btnStyle || "solid";
+    var topR, topG, topB, botR, botG, botB;
+
+    if (style === "flat") {
+      return {
+        top: "rgba(" + r + ", " + g + ", " + b + ", 1.0)",
+        bot: "rgba(" + r + ", " + g + ", " + b + ", 1.0)",
+        hoverTop: "rgba(" + clampShift(r, 30) + ", " + clampShift(g, 30) + ", " + clampShift(b, 30) + ", 1.0)",
+        hoverBot: "rgba(" + clampShift(r, 30) + ", " + clampShift(g, 30) + ", " + clampShift(b, 30) + ", 1.0)",
+        text: "#e8e8e8",
+        gold: "#d4b04f",
+        backdrop: "none",
+        shadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+        bgImage: "none"
+      };
+    } else if (style === "neon") {
+      topR = clampShift(r, 15); topG = clampShift(g, 15); topB = clampShift(b, 15);
+      botR = clampShift(r, -25); botG = clampShift(g, -25); botB = clampShift(b, -25);
+      return {
+        top: "rgba(" + topR + ", " + topG + ", " + topB + ", 0.95)",
+        bot: "rgba(" + botR + ", " + botG + ", " + botB + ", 0.95)",
+        hoverTop: "rgba(" + clampShift(r, 45) + ", " + clampShift(g, 45) + ", " + clampShift(b, 45) + ", 0.98)",
+        hoverBot: "rgba(" + clampShift(r, 5) + ", " + clampShift(g, 5) + ", " + clampShift(b, 5) + ", 0.98)",
+        text: "#ffffff",
+        gold: "#ffd700",
+        backdrop: "none",
+        shadow: "0 0 12px rgba(var(--accent-rgb, 255, 215, 0), 0.6), inset 0 0 6px rgba(var(--accent-rgb, 255, 215, 0), 0.4)",
+        bgImage: "linear-gradient(180deg, rgba(" + topR + ", " + topG + ", " + topB + ", 0.95) 0%, rgba(" + botR + ", " + botG + ", " + botB + ", 0.95) 100%)"
+      };
+    } else if (style === "clay") {
+      topR = clampShift(r, 25); topG = clampShift(g, 25); topB = clampShift(b, 25);
+      botR = clampShift(r, -15); botG = clampShift(g, -15); botB = clampShift(b, -15);
+      return {
+        top: "rgba(" + topR + ", " + topG + ", " + topB + ", 0.98)",
+        bot: "rgba(" + botR + ", " + botG + ", " + botB + ", 0.98)",
+        hoverTop: "rgba(" + clampShift(r, 45) + ", " + clampShift(g, 45) + ", " + clampShift(b, 45) + ", 0.98)",
+        hoverBot: "rgba(" + clampShift(r, 5) + ", " + clampShift(g, 5) + ", " + clampShift(b, 5) + ", 0.98)",
+        text: "#f0f0f0",
+        gold: "#eab308",
+        backdrop: "none",
+        shadow: "inset 2px 2px 4px rgba(255, 255, 255, 0.2), inset -2px -2px 4px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0,0,0,0.3)",
+        bgImage: "linear-gradient(180deg, rgba(" + topR + ", " + topG + ", " + topB + ", 0.98) 0%, rgba(" + botR + ", " + botG + ", " + botB + ", 0.98) 100%)"
+      };
+    } else if (style === "radiant") {
+      var brightR = clampShift(r, 50), brightG = clampShift(g, 50), brightB = clampShift(b, 50);
+      var midR = clampShift(r, 15), midG = clampShift(g, 15), midB = clampShift(b, 15);
+      var darkR = clampShift(r, -20), darkG = clampShift(g, -20), darkB = clampShift(b, -20);
+
+      var hBrightR = clampShift(r, 70), hBrightG = clampShift(g, 70), hBrightB = clampShift(b, 70);
+      var hDarkR = clampShift(r, 0), hDarkG = clampShift(g, 0), hDarkB = clampShift(b, 0);
+
+      return {
+        top: "rgba(" + midR + ", " + midG + ", " + midB + ", 0.98)",
+        bot: "rgba(" + darkR + ", " + darkG + ", " + darkB + ", 0.98)",
+        hoverTop: "rgba(" + hBrightR + ", " + hBrightG + ", " + hBrightB + ", 0.98)",
+        hoverBot: "rgba(" + hDarkR + ", " + hDarkG + ", " + hDarkB + ", 0.98)",
+        text: "#ffffff",
+        gold: "#ffd700",
+        backdrop: "none",
+        shadow: "0 0 14px rgba(" + brightR + ", " + brightG + ", " + brightB + ", 0.45), inset 0 1px 0 rgba(" + brightR + ", " + brightG + ", " + brightB + ", 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.5)",
+        bgImage: "radial-gradient(ellipse at 50% 15%, rgba(" + brightR + ", " + brightG + ", " + brightB + ", 0.75) 0%, transparent 70%), linear-gradient(180deg, rgba(" + midR + ", " + midG + ", " + midB + ", 0.98) 0%, rgba(" + darkR + ", " + darkG + ", " + darkB + ", 0.98) 100%)"
+      };
+    } else if (style === "cyber") {
+      topR = clampShift(r, 12); topG = clampShift(g, 18); topB = clampShift(b, 30);
+      botR = clampShift(r, -30); botG = clampShift(g, -25); botB = clampShift(b, -15);
+      return {
+        top: "rgba(" + topR + ", " + topG + ", " + topB + ", 0.98)",
+        bot: "rgba(" + botR + ", " + botG + ", " + botB + ", 0.98)",
+        hoverTop: "rgba(" + clampShift(topR, 35) + ", " + clampShift(topG, 35) + ", " + clampShift(topB, 45) + ", 0.98)",
+        hoverBot: "rgba(" + clampShift(botR, 15) + ", " + clampShift(botG, 15) + ", " + clampShift(botB, 20) + ", 0.98)",
+        text: "#f0f4f8",
+        gold: "#38bdf8",
+        backdrop: "none",
+        shadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.5)",
+        bgImage: "linear-gradient(180deg, rgba(" + topR + ", " + topG + ", " + topB + ", 0.98) 0%, rgba(" + botR + ", " + botG + ", " + botB + ", 0.98) 100%)"
+      };
+    }
+
+    topR = clampShift(r, 22); topG = clampShift(g, 22); topB = clampShift(b, 22);
+    botR = clampShift(r, -12); botG = clampShift(g, -12); botB = clampShift(b, -12);
 
     return {
       top: "rgba(" + topR + ", " + topG + ", " + topB + ", 0.98)",
       bot: "rgba(" + botR + ", " + botG + ", " + botB + ", 0.98)",
-      hoverTop: "rgba(" + hTopR + ", " + hTopG + ", " + hTopB + ", 0.98)",
-      hoverBot: "rgba(" + hBotR + ", " + hBotG + ", " + hBotB + ", 0.98)",
-      border: "rgba(212, 176, 79, 0.28)",
-      hoverBorder: "rgba(212, 176, 79, 0.55)",
+      hoverTop: "rgba(" + clampShift(r, 38) + ", " + clampShift(g, 38) + ", " + clampShift(b, 38) + ", 0.98)",
+      hoverBot: "rgba(" + clampShift(r, 8) + ", " + clampShift(g, 8) + ", " + clampShift(b, 8) + ", 0.98)",
       text: "#e8e8e8",
-      gold: "#d4b04f"
+      gold: "#d4b04f",
+      backdrop: "none",
+      shadow: "none",
+      bgImage: "linear-gradient(180deg, rgba(" + topR + ", " + topG + ", " + topB + ", 0.98) 0%, rgba(" + botR + ", " + botG + ", " + botB + ", 0.98) 100%)"
     };
   }
 
   var isSyncing = false;
   var syncDebounceTimer = null;
+  var lastStableSidebarHeight = 170;
 
   function loadConfig() {
     try {
-      var saved = localStorage.getItem("dolp_mod_config");
+      var saved = localStorage.getItem("mod_config");
       if (saved) {
         var parsed = JSON.parse(saved);
         for (var k in parsed) {
@@ -169,7 +317,7 @@
 
   function saveConfig() {
     try {
-      localStorage.setItem("dolp_mod_config", JSON.stringify(config));
+      localStorage.setItem("mod_config", JSON.stringify(config));
     } catch (_) {}
   }
 
@@ -181,17 +329,23 @@
   }
 
   function updateSidebarHeightVar() {
-    var sidebar = el("dolp-sidebar");
+    var sidebar = el("sidebar");
     if (sidebar && config.useModUI) {
-      var h = sidebar.offsetHeight || 170;
-      document.documentElement.style.setProperty("--dolp-sidebar-height", h + "px");
+      if (isSyncing) return;
+      var h = sidebar.offsetHeight;
+      if (h && h > 30) {
+        lastStableSidebarHeight = h;
+        document.documentElement.style.setProperty("--sidebar-height", h + "px");
+      } else if (lastStableSidebarHeight > 30) {
+        document.documentElement.style.setProperty("--sidebar-height", lastStableSidebarHeight + "px");
+      }
     } else {
-      document.documentElement.style.setProperty("--dolp-sidebar-height", "170px");
+      document.documentElement.style.setProperty("--sidebar-height", "170px");
     }
   }
 
   function applySidebarFontOptions() {
-    var sidebar = el("dolp-sidebar");
+    var sidebar = el("sidebar");
     if (!sidebar) return;
 
     if (window.V && window.V.options) {
@@ -238,7 +392,7 @@
     }
   }
 
-function wireStatsClick(statsElem) {
+  function wireStatsClick(statsElem) {
     if (!statsElem) return;
     statsElem.style.cursor = "pointer";
     statsElem.onclick = function (e) {
@@ -246,19 +400,19 @@ function wireStatsClick(statsElem) {
         try { window.extendStats(); } catch (_) {}
       }
       var isExpanded = !!(window.V && window.V.extendedStats);
-      var container = el("dolp-stats-container");
+      var container = el("stats-container");
       if (container) container.classList.toggle("statsExtended", isExpanded);
       statsElem.classList.toggle("statsExtended", isExpanded);
-      statsElem.classList.toggle("dolp-stats-expanded", isExpanded);
+      statsElem.classList.toggle("stats-expanded", isExpanded);
       setTimeout(updateSidebarHeightVar, 0);
       requestAnimationFrame(updateSidebarHeightVar);
     };
 
     var isExpanded = !!(window.V && window.V.extendedStats);
-    var container = el("dolp-stats-container");
+    var container = el("stats-container");
     if (container) container.classList.toggle("statsExtended", isExpanded);
     statsElem.classList.toggle("statsExtended", isExpanded);
-    statsElem.classList.toggle("dolp-stats-expanded", isExpanded);
+    statsElem.classList.toggle("stats-expanded", isExpanded);
     setTimeout(updateSidebarHeightVar, 0);
   }
 
@@ -269,40 +423,85 @@ function wireStatsClick(statsElem) {
     var captions = statMeters.children;
     for (var i = 0; i < captions.length; i++) {
       var cap = captions[i];
+      if (!config.useModUI) {
+        if (cap.id) cap.className = "";
+        cap.removeAttribute("data-val");
+        cap.removeAttribute("data-title");
+        cap.removeAttribute("title");
+        continue;
+      }
+      
+      if (cap.getAttribute("title") && !cap.dataset.origTitle) {
+        cap.dataset.origTitle = cap.getAttribute("title");
+      }
+      var origTitle = cap.dataset.origTitle || "";
+
       var span = cap.querySelector("span");
+      var innerText = "";
+      if (span && span.textContent) {
+        innerText = span.textContent.trim();
+      }
+      if (!innerText) {
+        var rawText = cap.textContent || "";
+        var match = rawText.match(/\d+(?:\.\d+)?%?/);
+        if (match) innerText = match[0];
+      }
+      if (!innerText) {
+        innerText = (cap.textContent || "").replace(/[^0-9.%]/g, "").trim();
+      }
+
+      var rawLabel = (cap.textContent || "").split(":")[0].trim();
+      var properLabel = rawLabel ? (rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1).toLowerCase()) : "";
+      var fullTitle = origTitle || (properLabel && innerText ? (properLabel + ": " + innerText) : (properLabel || innerText));
+      
+      if (config.statmetersCollapsed) {
+        if (innerText) {
+          cap.setAttribute("data-val", innerText);
+        } else {
+          cap.removeAttribute("data-val");
+        }
+        cap.removeAttribute("data-title");
+        cap.removeAttribute("title");
+      } else {
+        cap.removeAttribute("data-val");
+        if (cap.id) cap.className = "";
+        if (fullTitle) {
+          cap.setAttribute("data-title", fullTitle);
+          cap.setAttribute("title", fullTitle);
+        } else {
+          cap.removeAttribute("data-title");
+          cap.removeAttribute("title");
+        }
+      }
+
+      if (!cap.dataset.clickValWired) {
+        cap.dataset.clickValWired = "1";
+        cap.style.cursor = "pointer";
+
+        cap.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var self = this;
+          self.classList.add("show-val");
+          if (self._hideTimer) clearTimeout(self._hideTimer);
+          self._hideTimer = setTimeout(function () {
+            self.classList.remove("show-val");
+          }, 2500);
+        });
+
+        cap.addEventListener("mouseleave", function () {
+          var self = this;
+          if (self._hideTimer) clearTimeout(self._hideTimer);
+          self.classList.remove("show-val");
+        });
+      }
+
       if (span && span.className) {
         cap.className = span.className;
-      }
-    }
-  }
-
-  function watchNativeOptionsOverlay() {
-    var customOverlay = el("customOverlay");
-    if (!customOverlay) return;
-
-    if (customOverlay.getAttribute("data-overlay") === "options" || el("customOverlayContent")) {
-      var select = customOverlay.querySelector("select[name*='options.theme']") || customOverlay.querySelector("select[id*='theme']");
-      if (select && !select.querySelector("option[value='midnight']")) {
-        var opt = document.createElement("option");
-        opt.value = "midnight";
-        opt.textContent = "Midnight Dark";
-        select.appendChild(opt);
-
-        if (window.V && window.V.options && window.V.options.theme === "midnight") {
-          opt.selected = true;
-          document.body.classList.add("theme-midnight");
-          document.body.setAttribute("data-theme", "midnight");
+      } else {
+        var id = (cap.id || "").toLowerCase();
+        if (id.indexOf("air") !== -1 || id.indexOf("oxygen") !== -1) {
+          cap.className = "lblue";
         }
-
-        select.addEventListener("change", function () {
-          if (select.value === "midnight") {
-            document.body.classList.add("theme-midnight");
-            document.body.setAttribute("data-theme", "midnight");
-          } else {
-            document.body.classList.remove("theme-midnight");
-            document.body.removeAttribute("data-theme");
-          }
-        });
       }
     }
   }
@@ -310,9 +509,9 @@ function wireStatsClick(statsElem) {
   function checkMobileDevice() {
     var isMobile = isMobileDevice();
     if (isMobile) {
-      document.body.classList.add("dolp-mobile");
+      document.body.classList.add("mobile-ui");
     } else {
-      document.body.classList.remove("dolp-mobile");
+      document.body.classList.remove("mobile-ui");
     }
   }
 
@@ -330,61 +529,102 @@ function wireStatsClick(statsElem) {
 
   function ensureClassicUISettingsButton() {
     if (config.useModUI) {
-      var oldBtn = el("dolp-classic-ui-settings-btn");
+      var oldBtn = el("classic-ui-settings-btn");
       if (oldBtn) oldBtn.remove();
+      var oldModBtn = el("ui-settings-btn");
+      if (oldModBtn && !oldModBtn.closest("#sidebar")) oldModBtn.remove();
       return;
     }
-    var target = el("overlayButtons") || el("storyCaptionContent");
+
+    var modBtn = el("ui-settings-btn");
+    if (modBtn) modBtn.remove();
+    var startSetBtn = el("start-ui-settings-btn");
+    if (startSetBtn) startSetBtn.remove();
+
+    var startCap = el("startCaption");
+    var overlayBtns = el("overlayButtons");
+    var captionCnt = el("storyCaptionContent");
+
+    var target = null;
+    if (startCap && startCap.isConnected && (startCap.children.length > 0 || startCap.textContent.trim().length > 0)) {
+      target = startCap;
+    } else if (overlayBtns && overlayBtns.isConnected) {
+      target = overlayBtns;
+    } else if (captionCnt && captionCnt.isConnected) {
+      target = captionCnt;
+    }
+
     if (!target) return;
 
-    var classicBtn = el("dolp-classic-ui-settings-btn");
+    var classicBtn = el("classic-ui-settings-btn");
     if (!classicBtn) {
       classicBtn = document.createElement("button");
-      classicBtn.id = "dolp-classic-ui-settings-btn";
-      classicBtn.className = "macro-button";
+      classicBtn.id = "classic-ui-settings-btn";
+      classicBtn.className = "macro-button btn-full";
       classicBtn.textContent = "UI SETTINGS";
-      classicBtn.style.cssText = "margin-top:6px; width:100%; cursor:pointer;";
       classicBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         e.preventDefault();
         openUISettingsOverlay();
       });
     }
-    if (classicBtn.parentElement !== target) {
+
+    if (classicBtn.parentElement !== target || target.lastElementChild !== classicBtn) {
       target.appendChild(classicBtn);
     }
   }
 
   function applyConfig() {
+    if (config.disablePaperdoll) cachedPaperdollActive = false;
     checkMobileDevice();
     applySidebarFontOptions();
     checkStackedOpenPanels();
 
     var root = document.documentElement;
+    var isMobile = isMobileDevice();
 
-    // Story Layout Classes
-    document.body.classList.remove("dolp-layout-overlay", "dolp-layout-below", "dolp-layout-above");
+    var nativeStartCap = el("startCaption");
+    var isStartMenu = !!(nativeStartCap && (nativeStartCap.closest("#storyCaptionContent") || nativeStartCap.closest("#storyCaptionDiv") || nativeStartCap.closest("#story") || nativeStartCap.closest("#panel-visuals")));
+    var isClassic = !config.useModUI;
+
+    var minPWidth = 260;
+    var maxPWidth = isMobile ? 450 : 600;
+    var pWidthNum = (isStartMenu || isClassic) ? 280 : (parseInt(config.panelWidth, 10) || 280);
+    if (isNaN(pWidthNum) || pWidthNum < minPWidth) pWidthNum = minPWidth;
+    if (pWidthNum > maxPWidth) pWidthNum = maxPWidth;
+    root.style.setProperty("--panel-width", pWidthNum + "px");
+
+    var stageScale = (isStartMenu || isClassic) ? 1 : (pWidthNum / 280);
+    root.style.setProperty("--stage-scale", stageScale.toFixed(4));
+
+    var maxSLeftOffset = isMobile ? 100 : 1200;
+    var sOffsetNum = parseInt(config.sidebarLeftOffset, 10);
+    if (isNaN(sOffsetNum) || sOffsetNum < 0) sOffsetNum = 0;
+    if (sOffsetNum > maxSLeftOffset) sOffsetNum = maxSLeftOffset;
+    root.style.setProperty("--sidebar-left-offset", sOffsetNum + "px");
+
+    document.body.classList.remove("layout-overlay", "layout-below", "layout-above");
     var layout = config.storyLayout || "overlay";
-    document.body.classList.add("dolp-layout-" + layout);
+    document.body.classList.add("layout-" + layout);
 
-    // Accent Color Logic for UI
     if (config.accentColor === "game") {
-      root.style.removeProperty("--dolp-accent");
-      document.body.style.removeProperty("--dolp-accent");
-      document.body.classList.remove("dolp-custom-accent");
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-rgb");
+      document.body.style.removeProperty("--accent");
+      document.body.classList.remove("custom-accent");
     } else {
       var accentHex = (config.accentColor === "custom") ? config.customAccent : ACCENT_MAP[config.accentColor];
       if (!accentHex) accentHex = "#ffd700";
-      root.style.setProperty("--dolp-accent", accentHex);
-      document.body.style.setProperty("--dolp-accent", accentHex);
-      document.body.classList.add("dolp-custom-accent");
+      root.style.setProperty("--accent", accentHex);
+      root.style.setProperty("--accent-rgb", hexToRgb(accentHex));
+      document.body.style.setProperty("--accent", accentHex);
+      document.body.classList.add("custom-accent");
     }
 
-    // Story Text Accent Color Logic (Support "ui" preset to match UI Accent)
     if (!config.storyAccentColor || config.storyAccentColor === "game") {
-      root.style.removeProperty("--dolp-story-accent");
-      document.body.style.removeProperty("--dolp-story-accent");
-      document.body.classList.remove("dolp-custom-story-accent");
+      root.style.removeProperty("--story-accent");
+      document.body.style.removeProperty("--story-accent");
+      document.body.classList.remove("custom-story-accent");
     } else {
       var storyAccentHex = "";
       if (config.storyAccentColor === "ui" || config.storyAccentColor === "match_ui") {
@@ -395,12 +635,11 @@ function wireStatsClick(statsElem) {
         storyAccentHex = ACCENT_MAP[config.storyAccentColor];
       }
       if (!storyAccentHex) storyAccentHex = "#ffd700";
-      root.style.setProperty("--dolp-story-accent", storyAccentHex);
-      document.body.style.setProperty("--dolp-story-accent", storyAccentHex);
-      document.body.classList.add("dolp-custom-story-accent");
+      root.style.setProperty("--story-accent", storyAccentHex);
+      document.body.style.setProperty("--story-accent", storyAccentHex);
+      document.body.classList.add("custom-story-accent");
     }
 
-    // Base Theme Logic
     var themeObj = null;
     if (config.baseTheme === "custom") {
       themeObj = generateThemeFromBaseHex(config.customBase || "#0d0d12");
@@ -411,79 +650,76 @@ function wireStatsClick(statsElem) {
     }
 
     if (themeObj) {
-      root.style.setProperty("--dolp-bg", themeObj.bg);
-      root.style.setProperty("--dolp-card-bg", themeObj.card);
-      root.style.setProperty("--dolp-btn-bg", themeObj.btn);
-      root.style.setProperty("--dolp-btn-hover", themeObj.btnHover);
-      root.style.setProperty("--dolp-border", themeObj.border);
-      root.style.setProperty("--dolp-text", themeObj.text);
-      root.style.setProperty("--dolp-text-muted", themeObj.textMuted);
+      root.style.setProperty("--bg", themeObj.bg);
+      root.style.setProperty("--card-bg", themeObj.card);
+      root.style.setProperty("--btn-bg", themeObj.btn);
+      root.style.setProperty("--btn-hover", themeObj.btnHover);
+      root.style.setProperty("--border", themeObj.border);
+      root.style.setProperty("--text", themeObj.text);
+      root.style.setProperty("--text-muted", themeObj.textMuted);
     } else {
-      root.style.removeProperty("--dolp-bg");
-      root.style.removeProperty("--dolp-card-bg");
-      root.style.removeProperty("--dolp-btn-bg");
-      root.style.removeProperty("--dolp-btn-hover");
-      root.style.removeProperty("--dolp-border");
-      root.style.removeProperty("--dolp-text");
-      root.style.removeProperty("--dolp-text-muted");
+      root.style.removeProperty("--bg");
+      root.style.removeProperty("--card-bg");
+      root.style.removeProperty("--btn-bg");
+      root.style.removeProperty("--btn-hover");
+      root.style.removeProperty("--border");
+      root.style.removeProperty("--text");
+      root.style.removeProperty("--text-muted");
     }
 
-    // Button Theme Logic
-    var btnObj = null;
-    if (config.btnTheme === "custom") {
-      btnObj = generateButtonThemeFromHex(config.customBtnColor || "#26262a");
-    } else {
-      btnObj = BTN_MAP[config.btnTheme] || BTN_MAP.default;
-    }
-
+    var btnObj = generateButtonThemeFromHex(getActiveBtnHex());
     if (btnObj) {
-      root.style.setProperty("--dolp-btn-top", btnObj.top);
-      root.style.setProperty("--dolp-btn-bot", btnObj.bot);
-      root.style.setProperty("--dolp-btn-top-hover", btnObj.hoverTop);
-      root.style.setProperty("--dolp-btn-bot-hover", btnObj.hoverBot);
-      root.style.setProperty("--dolp-btn-border", btnObj.border);
-      root.style.setProperty("--dolp-btn-border-active", btnObj.hoverBorder);
-      root.style.setProperty("--dolp-btn-text", btnObj.text);
-      root.style.setProperty("--dolp-btn-gold", btnObj.gold);
+      root.style.setProperty("--btn-top", btnObj.top);
+      root.style.setProperty("--btn-bot", btnObj.bot);
+      root.style.setProperty("--btn-top-hover", btnObj.hoverTop);
+      root.style.setProperty("--btn-bot-hover", btnObj.hoverBot);
+      root.style.setProperty("--btn-text", btnObj.text);
+      root.style.setProperty("--btn-gold", btnObj.gold);
+      root.style.setProperty("--btn-backdrop-filter", btnObj.backdrop || "none");
+      root.style.setProperty("--btn-box-shadow", btnObj.shadow || "none");
+      root.style.setProperty("--btn-bg-image", btnObj.bgImage || "none");
     }
 
-    root.style.setProperty("--dolp-panel-width", "280px");
-    var offsetVal = isMobileDevice() ? 0 : parseInt(config.storyOffset, 10);
-    if (isNaN(offsetVal) || offsetVal < 0) offsetVal = isMobileDevice() ? 0 : 300;
-    root.style.setProperty("--dolp-story-offset", offsetVal + "px");
+    var maxStoryOffset = isMobile ? 600 : 1000;
+    var offsetVal = parseInt(config.storyOffset, 10);
+    if (isNaN(offsetVal) || offsetVal < 0) offsetVal = isMobile ? 20 : 300;
+    if (offsetVal > maxStoryOffset) offsetVal = maxStoryOffset;
+    root.style.setProperty("--story-offset", offsetVal + "px");
 
     if (config.compactStats) {
-      document.body.classList.add("dolp-compact-stats");
+      document.body.classList.add("compact-stats");
     } else {
-      document.body.classList.remove("dolp-compact-stats");
+      document.body.classList.remove("compact-stats");
     }
 
     var statMeters = el("statmeters");
     if (statMeters) {
-      statMeters.classList.toggle("dolp-statmeters-collapsed", !!config.statmetersCollapsed);
+      statMeters.classList.toggle("statmeters-collapsed", !!config.statmetersCollapsed);
       syncStatmeterColors();
     }
 
-    document.body.classList.toggle("dolp-sv-disabled", !config.sideviewEnabled);
-    var svHost = el("dolp-sv-host");
+    var svOpacity = (typeof config.sideviewOpacity !== "undefined") ? parseInt(config.sideviewOpacity, 10) : 100;
+    var sideviewActive = config.sideviewEnabled && (svOpacity > 0);
+    document.body.classList.toggle("sv-disabled", !sideviewActive);
+    var svHost = el("sv-host");
     if (svHost) {
-      svHost.style.display = config.sideviewEnabled ? "block" : "none";
+      svHost.style.display = sideviewActive ? "block" : "none";
     }
 
-    var sidebar = el("dolp-sidebar");
+    var sidebar = el("sidebar");
     var tray    = el("ui-bar-tray");
     var uiBar   = el("ui-bar");
 
     if (config.useModUI) {
-      document.body.classList.add("dolp-mod-active");
+      document.body.classList.add("mod-active");
       if (sidebar) sidebar.style.display = "flex";
 
-      var header = el("dolp-header");
+      var header = el("header");
       if (tray && header && tray.parentElement !== header) {
         header.insertBefore(tray, header.firstChild);
       }
     } else {
-      document.body.classList.remove("dolp-mod-active");
+      document.body.classList.remove("mod-active");
       if (sidebar) sidebar.style.display = "none";
 
       if (tray && uiBar && tray.parentElement !== uiBar) {
@@ -501,8 +737,8 @@ function wireStatsClick(statsElem) {
     updateSwitchButton();
     applyStates();
     sizeSV();
-    watchNativeOptionsOverlay();
     updateSidebarHeightVar();
+    updateStageHeight();
   }
 
   function updateSwitchButton() {
@@ -511,11 +747,11 @@ function wireStatsClick(statsElem) {
     var target      = trayElem || historyElem;
     if (!target) return;
 
-    var switchBtn = el("dolp-ui-toggle-btn");
+    var switchBtn = el("ui-toggle-btn");
     if (!switchBtn) {
       switchBtn = document.createElement("button");
-      switchBtn.id = "dolp-ui-toggle-btn";
-      switchBtn.className = "dolp-ui-switch-btn";
+      switchBtn.id = "ui-toggle-btn";
+      switchBtn.className = "ui-switch-btn";
     }
 
     switchBtn.onclick = function (e) {
@@ -524,6 +760,7 @@ function wireStatsClick(statsElem) {
         e.preventDefault();
       }
       config.useModUI = !config.useModUI;
+      config.isStowed = false;
       saveConfig();
       applyConfig();
       requestSync(true);
@@ -545,14 +782,18 @@ function wireStatsClick(statsElem) {
   function reconstructOverlayButtons(overlayBtns) {
     if (!overlayBtns) return;
 
-    var attrBtns = el("dolp-attr-buttons");
-    var setBtns  = el("dolp-set-buttons");
+    var attrBtns = el("attr-buttons");
+    var setBtns  = el("set-buttons");
+    var pAttr    = el("panel-attributes");
+    var pSet     = el("panel-settings");
     var allBtns  = [];
 
-    [attrBtns, setBtns, overlayBtns].forEach(function (container) {
+    [attrBtns, setBtns, overlayBtns, pAttr, pSet].forEach(function (container) {
       if (container) {
-        var btns = Array.from(container.querySelectorAll("button, .macro-button, a"));
+        var btns = Array.from(container.querySelectorAll("button, .macro-button"));
         btns.forEach(function (b) {
+          if (b.id === "ui-settings-btn" || b.id === "start-ui-settings-btn" || b.id === "classic-ui-settings-btn" || b.id === "ui-toggle-btn" || b.id === "master-toggle") return;
+          b.classList.remove("btn-full");
           if (allBtns.indexOf(b) === -1) allBtns.push(b);
         });
       }
@@ -565,7 +806,7 @@ function wireStatsClick(statsElem) {
     var btnMap = {};
     allBtns.forEach(function (b) {
       var txt = (b.textContent || "").toUpperCase().trim();
-      btnMap[txt] = b;
+      if (txt) btnMap[txt] = b;
     });
 
     function getBtn(txt) {
@@ -596,15 +837,14 @@ function wireStatsClick(statsElem) {
 
     overlayBtns.appendChild(document.createElement("br"));
 
-    overlayBtns.appendChild(createSplit("DOL+ CREDITS", "DECOMOD"));
-    overlayBtns.appendChild(createSplit("OPTIONS", "SAVES"));
+    var optionsBtn = getBtn("OPTIONS");
+    var savesBtn   = getBtn("SAVES");
 
     var usedBtns = [
-      bChar, getBtn("SOCIAL"),
+      bChar, bSoc,
       getBtn("TRAITS"), getBtn("JOURNAL"),
       getBtn("STATS"), getBtn("FEATS"),
-      getBtn("DOL+ CREDITS"), getBtn("DECOMOD"),
-      getBtn("OPTIONS"), getBtn("SAVES")
+      optionsBtn, savesBtn
     ];
 
     var remaining = allBtns.filter(function (b) { return usedBtns.indexOf(b) === -1; });
@@ -615,9 +855,17 @@ function wireStatsClick(statsElem) {
       if (remaining[i + 1]) splitRem.appendChild(remaining[i + 1]);
       overlayBtns.appendChild(splitRem);
     }
+
+    if (optionsBtn || savesBtn) {
+      var optSaveSplit = document.createElement("div");
+      optSaveSplit.className = "sidebarButtonSplit";
+      if (optionsBtn) optSaveSplit.appendChild(optionsBtn);
+      if (savesBtn) optSaveSplit.appendChild(savesBtn);
+      overlayBtns.appendChild(optSaveSplit);
+    }
   }
 
-function restoreOriginalDOM() {
+  function restoreOriginalDOM() {
     var uiBar      = el("ui-bar");
     var tray       = el("ui-bar-tray");
     var uiBody     = el("ui-bar-body");
@@ -632,30 +880,94 @@ function restoreOriginalDOM() {
     var mobStats   = el("mobileStats");
     var menu       = el("menu");
     var startCap   = el("startCaption");
-    var startImg = el("startingPlayerImage") || document.querySelector("#startingPlayerImage");
-      if (startImg && (startImg.children.length > 0 || startImg.querySelector("canvas, img"))) {
-        startImg.style.display = "block";
-        startImg.style.visibility = "visible";
-        var topTitle = startCaption.querySelector("#dolp-start-story-title") || startCaption.querySelector("h1, h2, .title");
-        if (topTitle && topTitle.nextSibling !== startImg) {
-          if (topTitle.nextSibling) {
-            startCaption.insertBefore(startImg, topTitle.nextSibling);
-          } else {
-            startCaption.appendChild(startImg);
-          }
-        }
-      }
-    document.body.classList.remove("dolp-mod-active");
-    document.body.classList.remove("dolp-stowed");
-    var sidebar = el("dolp-sidebar");
-    if (sidebar) sidebar.style.display = "none";
+    var startImg   = el("startingPlayerImage") || document.querySelector("#startingPlayerImage");
 
-    // Remove Mod UI cloned title and setting buttons
-    var modTitle = el("dolp-start-story-title");
+    var modBtn = el("ui-settings-btn");
+    if (modBtn) modBtn.remove();
+    var startSetBtn = el("start-ui-settings-btn");
+    if (startSetBtn) startSetBtn.remove();
+
+    document.body.classList.remove("mod-active", "mod-stowed");
+
+    var sidebar = el("sidebar");
+    if (sidebar) {
+      sidebar.style.display = "none";
+      sidebar.classList.remove("stowed", "mod-start-menu");
+    }
+
+    var modTitle = el("start-story-title");
     if (modTitle) modTitle.remove();
 
-    var startUISetBtn = el("dolp-start-ui-settings-btn");
-    if (startUISetBtn) startUISetBtn.remove();
+    if (startCap) {
+      var startGrids = Array.from(startCap.querySelectorAll(".start-btn-grid, .start-bottom-row, .btn-grid, .start-extra-btns"));
+      startGrids.forEach(function (g) {
+        while (g.firstChild) {
+          startCap.appendChild(g.firstChild);
+        }
+        g.remove();
+      });
+
+      var startActionBtns = Array.from(startCap.querySelectorAll("button, .macro-button")).filter(function (b) {
+        if (b.id === "start-ui-settings-btn" || b.id === "ui-toggle-btn" || b.id === "classic-ui-settings-btn") return false;
+        var txt = (b.textContent || "").toUpperCase().trim();
+        return txt.length > 1;
+      });
+
+      var saveClassicBtn = null;
+      var optionsClassicBtn = null;
+      var featsClassicBtn = null;
+      var otherClassicBtns = [];
+
+      startActionBtns.forEach(function (btn) {
+        var txt = (btn.textContent || "").toUpperCase().trim();
+        if (txt.indexOf("SAVE") !== -1) saveClassicBtn = btn;
+        else if (txt.indexOf("OPTION") !== -1) optionsClassicBtn = btn;
+        else if (txt.indexOf("FEAT") !== -1) featsClassicBtn = btn;
+        else otherClassicBtns.push(btn);
+      });
+
+      if (otherClassicBtns.length > 0) {
+        var classicExtraDiv = document.createElement("div");
+        classicExtraDiv.className = "start-extra-btns";
+        classicExtraDiv.style.cssText = "margin-bottom:8px; display:flex; flex-direction:column; gap:6px;";
+        otherClassicBtns.forEach(function (btn) {
+          btn.classList.add("btn-full");
+          btn.style.borderRadius = "0px";
+          classicExtraDiv.appendChild(btn);
+        });
+        startCap.appendChild(classicExtraDiv);
+      }
+
+      if (saveClassicBtn) {
+        saveClassicBtn.classList.add("btn-full");
+        saveClassicBtn.style.borderRadius = "0px";
+        startCap.appendChild(saveClassicBtn);
+      }
+
+      if (optionsClassicBtn || featsClassicBtn) {
+        var classicBottomPair = document.createElement("div");
+        classicBottomPair.className = "start-bottom-row";
+        if (optionsClassicBtn) {
+          optionsClassicBtn.classList.remove("btn-full");
+          optionsClassicBtn.style.borderRadius = "0px";
+          classicBottomPair.appendChild(optionsClassicBtn);
+        }
+        if (featsClassicBtn) {
+          featsClassicBtn.classList.remove("btn-full");
+          featsClassicBtn.style.borderRadius = "0px";
+          classicBottomPair.appendChild(featsClassicBtn);
+        }
+        startCap.appendChild(classicBottomPair);
+      }
+
+      if (startImg && startCap && startImg.parentElement !== startCap) {
+        startCap.insertBefore(startImg, startCap.firstChild);
+      }
+
+      if (startCap && storyCap && startCap.parentElement !== storyCap) {
+        storyCap.appendChild(startCap);
+      }
+    }
 
     reconstructOverlayButtons(overlayBtns);
 
@@ -663,7 +975,7 @@ function restoreOriginalDOM() {
       uiBar.insertBefore(tray, uiBar.firstChild);
     }
 
-    if (uiBody && storyCap && storyCap.parentElement !== storyCap) {
+    if (uiBody && storyCap && storyCap.parentElement !== uiBody) {
       uiBody.appendChild(storyCap);
     }
 
@@ -693,6 +1005,15 @@ function restoreOriginalDOM() {
       captionDiv.appendChild(captionCnt);
     }
 
+    if (statMeters) {
+      statMeters.classList.remove("statmeters-collapsed");
+      var caps = statMeters.children;
+      for (var c = 0; c < caps.length; c++) {
+        if (caps[c].id) caps[c].className = "";
+        caps[c].removeAttribute("data-val");
+      }
+    }
+
     if (captionCnt && statMeters) {
       var firstElem = captionCnt.firstElementChild;
       if (firstElem && firstElem !== statMeters) {
@@ -706,17 +1027,8 @@ function restoreOriginalDOM() {
       }
     }
 
-    // Restore startingPlayerImage back into native caption container for Classic UI
-    if (startImg && captionCnt && startImg.parentElement !== captionCnt) {
-      captionCnt.appendChild(startImg);
-    }
-
     if (captionCnt && overlayBtns && overlayBtns.parentElement !== captionCnt) {
       captionCnt.appendChild(overlayBtns);
-    }
-
-    if (startCap && storyCap && startCap.parentElement !== storyCap) {
-      storyCap.appendChild(startCap);
     }
 
     if (mobStats && storyCap && mobStats.parentElement !== storyCap) {
@@ -729,22 +1041,68 @@ function restoreOriginalDOM() {
 
     [sky, imgWrap, captionDiv, captionCnt, stats, statMeters, overlayBtns, mobStats, uiBar, uiBody, storyCap, menu, startCap, startImg].forEach(cleanStyles);
 
-    var stage = el("dolp-visual-stage");
+    var stage = el("visual-stage");
     if (stage) stage.innerHTML = "";
 
     if (typeof window.updatehistorycontrols === "function") {
       try { window.updatehistorycontrols(); } catch (_) {}
     }
+
+    applyStates();
+  }
+
+  function wireGlobalSwipe() {
+    if (window._modSwipeWired) return;
+    window._modSwipeWired = true;
+
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var touchEndX = 0;
+    var touchEndY = 0;
+    var touchTargetIsSidebar = false;
+
+    document.addEventListener("touchstart", function (e) {
+      if (!config.useModUI) return;
+      if (e.touches && e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchEndX = touchStartX;
+        touchEndY = touchStartY;
+        touchTargetIsSidebar = !!(e.target && e.target.closest("#sidebar"));
+      }
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (e) {
+      if (!config.useModUI) return;
+      if (e.touches && e.touches.length === 1) {
+        touchEndX = e.touches[0].clientX;
+        touchEndY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    document.addEventListener("touchend", function () {
+      if (!config.useModUI) return;
+      var dx = touchEndX - touchStartX;
+      var dy = touchEndY - touchStartY;
+
+      if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        if (config.isStowed && dx > 35 && (touchTargetIsSidebar || touchStartX < 60)) {
+          toggleStow();
+        } else if (!config.isStowed && dx < -35 && touchTargetIsSidebar) {
+          toggleStow();
+        }
+      }
+    }, { passive: true });
   }
 
   function ensureSidebarDOM() {
-    if (el("dolp-sidebar")) return;
+    if (el("sidebar")) return;
 
     var sidebar = document.createElement("div");
-    sidebar.id  = "dolp-sidebar";
+    sidebar.id  = "sidebar";
 
     var header = document.createElement("div");
-    header.id  = "dolp-header";
+    header.id  = "header";
 
     var tray = el("ui-bar-tray");
     if (tray) {
@@ -752,21 +1110,21 @@ function restoreOriginalDOM() {
     }
 
     var statsContainer = document.createElement("div");
-    statsContainer.id  = "dolp-stats-container";
+    statsContainer.id  = "stats-container";
     header.appendChild(statsContainer);
 
     var tabBar = document.createElement("div");
-    tabBar.id  = "dolp-tab-bar";
+    tabBar.id  = "tab-bar";
 
     var tabs = [
-      { id: "visuals", label: "Visuals" },
-      { id: "attributes", label: "Attributes" },
-      { id: "settings", label: "Settings" }
+      { id: "visuals", label: "VISUALS" },
+      { id: "attributes", label: "ATTRIBUTES" },
+      { id: "settings", label: "SETTINGS" }
     ];
 
     tabs.forEach(function (t) {
       var btn = document.createElement("button");
-      btn.className = "dolp-tab-btn" + (config.openPanels && config.openPanels[t.id] ? " active" : "");
+      btn.className = "tab-btn" + (config.openPanels && config.openPanels[t.id] ? " active" : "");
       btn.setAttribute("data-tab", t.id);
       btn.textContent = t.label;
       btn.addEventListener("click", function (e) {
@@ -778,8 +1136,8 @@ function restoreOriginalDOM() {
     });
 
     var masterToggle = document.createElement("button");
-    masterToggle.id = "dolp-master-toggle";
-    masterToggle.className = "dolp-toggle-btn";
+    masterToggle.id = "master-toggle";
+    masterToggle.className = "toggle-btn";
     masterToggle.textContent = "▲";
     masterToggle.title = "Toggle Sidebar Panels";
     masterToggle.addEventListener("click", function (e) {
@@ -793,17 +1151,18 @@ function restoreOriginalDOM() {
     sidebar.appendChild(header);
 
     var body = document.createElement("div");
-    body.id  = "dolp-body";
+    body.id  = "panel-body";
 
     ["visuals", "attributes", "settings"].forEach(function (id) {
       var panel = document.createElement("div");
-      panel.id  = "dolp-panel-" + id;
-      panel.className = "dolp-panel" + (config.openPanels && config.openPanels[id] ? " active" : "");
+      panel.id  = "panel-" + id;
+      panel.className = "panel" + (config.openPanels && config.openPanels[id] ? " active" : "");
       body.appendChild(panel);
     });
 
     sidebar.appendChild(body);
     document.body.appendChild(sidebar);
+    wireGlobalSwipe();
   }
 
   function togglePanel(panelId) {
@@ -844,18 +1203,31 @@ function restoreOriginalDOM() {
   }
 
   function toggleStow() {
-    isStowed = !isStowed;
+    config.isStowed = !config.isStowed;
+    if (isMobileDevice()) {
+      config.storyOffset = config.isStowed ? 25 : 20;
+    }
+    saveConfig();
     applyStates();
+    applyConfig();
   }
 
   function applyStates() {
-    var sidebar = el("dolp-sidebar");
-    if (sidebar) {
-      sidebar.classList.toggle("stowed", isStowed);
-    }
-    document.body.classList.toggle("dolp-stowed", isStowed);
+    var sidebar = el("sidebar");
+    var uiBar   = el("ui-bar");
 
-    var toggleBtn = el("dolp-master-toggle");
+    var isStowedBool = !!config.isStowed;
+
+    if (config.useModUI) {
+      if (sidebar) sidebar.classList.toggle("stowed", isStowedBool);
+      if (uiBar) uiBar.classList.toggle("stowed", isStowedBool);
+      document.body.classList.toggle("mod-stowed", isStowedBool);
+    } else {
+      if (sidebar) sidebar.classList.remove("stowed");
+      document.body.classList.remove("mod-stowed");
+    }
+
+    var toggleBtn = el("master-toggle");
     if (toggleBtn) {
       var anyOpen = false;
       if (config.openPanels) {
@@ -870,33 +1242,28 @@ function restoreOriginalDOM() {
       config.openPanels = { visuals: true, attributes: false, settings: false };
     }
 
-    var tabBtns = document.querySelectorAll(".dolp-tab-btn");
+    var tabBtns = document.querySelectorAll(".tab-btn");
     tabBtns.forEach(function (btn) {
       var t = btn.getAttribute("data-tab");
-      var isOpen = !isStowed && !!config.openPanels[t];
+      var isOpen = !isStowedBool && !!config.openPanels[t];
       btn.classList.toggle("active", isOpen);
     });
 
     ["visuals", "attributes", "settings"].forEach(function (id) {
-      var p = el("dolp-panel-" + id);
+      var p = el("panel-" + id);
       if (p) {
-        var isOpen = !isStowed && !!config.openPanels[id];
+        var isOpen = !isStowedBool && !!config.openPanels[id];
         p.classList.toggle("active", isOpen);
       }
     });
-
-    var uiBar = el("ui-bar");
-    if (uiBar) {
-      uiBar.classList.toggle("stowed", isStowed);
-    }
 
     updateSidebarHeightVar();
   }
 
   function wireOriginalToggle() {
     var toggleBtn = el("ui-bar-toggle");
-    if (toggleBtn && !toggleBtn.dataset.dolpWired) {
-      toggleBtn.dataset.dolpWired = "1";
+    if (toggleBtn && !toggleBtn.dataset.modWired) {
+      toggleBtn.dataset.modWired = "1";
       toggleBtn.addEventListener("click", function (e) {
         if (config.useModUI) {
           e.stopPropagation();
@@ -905,35 +1272,6 @@ function restoreOriginalDOM() {
         }
       });
     }
-  }
-
-  function showStatToast(label, val) {
-    if (!config.useModUI) return;
-    var existing = el("dolp-stat-toast");
-    if (existing) existing.remove();
-
-    var toast = document.createElement("div");
-    toast.id = "dolp-stat-toast";
-    toast.textContent = label + ": " + val;
-    document.body.appendChild(toast);
-
-    setTimeout(function () {
-      if (toast.parentElement) toast.remove();
-    }, 2200);
-  }
-
-  function getStatExactValue(id, rawText) {
-    if (window.V) {
-      if (id.indexOf("pain") !== -1) return Math.floor(window.V.pain || 0) + " / 100";
-      if (id.indexOf("arousal") !== -1) return Math.floor(window.V.arousal || 0) + " / " + (window.V.arousalmax || 10000);
-      if (id.indexOf("tired") !== -1 || id.indexOf("fatigue") !== -1) return Math.floor(window.V.tiredness || 0) + " / " + (window.V.tirednessmax || 1000);
-      if (id.indexOf("stress") !== -1) return Math.floor(window.V.stress || 0) + " / " + (window.V.stressmax || 10000);
-      if (id.indexOf("trauma") !== -1) return Math.floor(window.V.trauma || 0) + " / " + (window.V.traumamax || 10000);
-      if (id.indexOf("control") !== -1) return Math.floor(window.V.control || 0) + " / " + (window.V.controlmax || 1000);
-      if (id.indexOf("allure") !== -1) return Math.floor(window.V.allure || 0);
-      if (id.indexOf("oxygen") !== -1 || id.indexOf("air") !== -1) return Math.floor(window.V.oxygen || 0) + " / " + (window.V.oxygenmax || 100);
-    }
-    return rawText || "N/A";
   }
 
   function wireStowedMobileStatsClick(mobStats) {
@@ -945,8 +1283,7 @@ function restoreOriginalDOM() {
 
       function updateTitle() {
         var textContent = (elem.textContent || "").trim();
-        var val = getStatExactValue(id, textContent);
-        elem.setAttribute("title", label.toUpperCase() + ": " + val);
+        elem.setAttribute("title", label.toUpperCase() + ": " + textContent);
       }
 
       elem.onmouseenter = function () {
@@ -954,32 +1291,32 @@ function restoreOriginalDOM() {
         updateTitle();
       };
 
-      if (elem.dataset.dolpWired) return;
-      elem.dataset.dolpWired = "1";
+      if (elem.dataset.modWired) return;
+      elem.dataset.modWired = "1";
       elem.style.cursor = "pointer";
     });
   }
 
   function ensureUISettingsOverlay() {
-    if (el("dolp-ui-settings-overlay-container")) return;
+    if (el("ui-settings-overlay-container")) return;
 
     var container = document.createElement("div");
-    container.id = "dolp-ui-settings-overlay-container";
+    container.id = "ui-settings-overlay-container";
     container.className = "hidden";
 
     var win = document.createElement("div");
-    win.id = "dolp-ui-settings-window";
+    win.id = "ui-settings-window";
 
     var titleHeader = document.createElement("div");
-    titleHeader.style.cssText = "display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--dolp-accent); padding-bottom:8px; margin-bottom:12px;";
+    titleHeader.className = "ui-settings-header-fixed";
 
     var title = document.createElement("h3");
     title.textContent = "UI SETTINGS";
-    title.style.cssText = "margin:0; color:var(--dolp-accent); font-weight:bold;";
+    title.style.cssText = "margin:0; color:var(--accent); font-weight:bold;";
 
     var closeBtn = document.createElement("button");
     closeBtn.textContent = "✕";
-    closeBtn.style.cssText = "background:transparent; border:none; color:var(--dolp-accent); font-size:1.2em; cursor:pointer;";
+    closeBtn.className = "ui-settings-close-btn";
     closeBtn.addEventListener("click", function () {
       container.classList.add("hidden");
     });
@@ -988,12 +1325,13 @@ function restoreOriginalDOM() {
     titleHeader.appendChild(closeBtn);
     win.appendChild(titleHeader);
 
-    // Layout Section
+    var isMobile = isMobileDevice();
+
     var genBox = document.createElement("div");
-    genBox.className = "dolp-custom-box";
+    genBox.className = "custom-box";
     var genTitle = document.createElement("div");
-    genTitle.className = "dolp-custom-title";
-    genTitle.textContent = "General Layout & Mobile";
+    genTitle.className = "custom-title";
+    genTitle.textContent = "General Layout & Sizes";
     genBox.appendChild(genTitle);
 
     genBox.appendChild(createCustomSelect("UI Layout Mode", [
@@ -1001,42 +1339,176 @@ function restoreOriginalDOM() {
       { label: "Classic Game UI", val: "classic" }
     ], config.useModUI ? "mod" : "classic", function (val) {
       config.useModUI = (val === "mod");
+      config.isStowed = false;
       saveConfig();
       applyConfig();
       requestSync(true);
     }));
 
-    // Story Position Select
-    var storyPosRow = createCustomSelect("Story Position", [
+    var sLeftRow = document.createElement("div");
+    sLeftRow.className = "custom-row";
+    sLeftRow.style.cssText = "flex-direction:column; align-items:stretch; gap:4px;";
+
+    var sLeftHeader = document.createElement("div");
+    sLeftHeader.style.cssText = "display:flex; justify-content:space-between; align-items:center;";
+
+    var sLeftLabel = document.createElement("label");
+    sLeftLabel.textContent = "Sidebar Position (Below/Above Mode)";
+
+    var sLeftRightDiv = document.createElement("div");
+    sLeftRightDiv.style.cssText = "display:flex; align-items:center; gap:8px;";
+
+    var sLeftValDisplay = document.createElement("span");
+    sLeftValDisplay.style.cssText = "color:var(--accent); font-weight:bold; font-size:0.9em;";
+    var curSLeftNum = parseInt(config.sidebarLeftOffset, 10) || 0;
+    if (isMobile && curSLeftNum > 100) curSLeftNum = 100;
+    sLeftValDisplay.textContent = curSLeftNum + "px";
+
+    var resetSLeftBtn = document.createElement("button");
+    resetSLeftBtn.textContent = "Reset Position";
+    resetSLeftBtn.style.cssText = "padding:2px 6px; font-size:0.75em; cursor:pointer;";
+
+    sLeftRightDiv.appendChild(sLeftValDisplay);
+    sLeftRightDiv.appendChild(resetSLeftBtn);
+
+    sLeftHeader.appendChild(sLeftLabel);
+    sLeftHeader.appendChild(sLeftRightDiv);
+
+    var sLeftSlider = document.createElement("input");
+    sLeftSlider.type = "range";
+    sLeftSlider.min = "0";
+    sLeftSlider.max = isMobile ? "100" : "1200";
+    sLeftSlider.step = "5";
+    sLeftSlider.value = curSLeftNum;
+    sLeftSlider.style.cssText = "width:100%; cursor:pointer;";
+
+    var saveSLeftTimeout = null;
+    sLeftSlider.addEventListener("input", function () {
+      var val = parseInt(sLeftSlider.value, 10);
+      sLeftValDisplay.textContent = val + "px";
+      config.sidebarLeftOffset = val + "px";
+      document.documentElement.style.setProperty("--sidebar-left-offset", val + "px");
+      clearTimeout(saveSLeftTimeout);
+      saveSLeftTimeout = setTimeout(function () {
+        saveConfig();
+      }, 300);
+    });
+
+    resetSLeftBtn.addEventListener("click", function () {
+      sLeftSlider.value = "0";
+      sLeftValDisplay.textContent = "0px";
+      config.sidebarLeftOffset = "0px";
+      document.documentElement.style.setProperty("--sidebar-left-offset", "0px");
+      saveConfig();
+    });
+
+    sLeftRow.appendChild(sLeftHeader);
+    sLeftRow.appendChild(sLeftSlider);
+
+    function updateSLeftVisibility() {
+      var isStacked = (config.storyLayout === "below" || config.storyLayout === "above");
+      if (isStacked) {
+        sLeftRow.style.setProperty("display", "flex", "important");
+      } else {
+        sLeftRow.style.setProperty("display", "none", "important");
+      }
+    }
+    updateSLeftVisibility();
+
+    genBox.appendChild(createCustomSelect("Story Position", [
       { label: "Side-by-Side / Overlay (Default)", val: "overlay" },
       { label: "Story Below Sidebar (Recommended for Mobile)", val: "below" },
       { label: "Story Above Sidebar (Recommended for Mobile)", val: "above" }
-    ], config.storyLayout || "overlay", function (val) {
+    ], config.storyLayout || (isMobile ? "below" : "overlay"), function (val) {
       config.storyLayout = val;
+      updateSLeftVisibility();
       saveConfig();
       applyConfig();
+    }));
+
+    genBox.appendChild(sLeftRow);
+
+    var pWidthRow = document.createElement("div");
+    pWidthRow.className = "custom-row";
+    pWidthRow.style.cssText = "flex-direction:column; align-items:stretch; gap:4px;";
+
+    var pWidthHeader = document.createElement("div");
+    pWidthHeader.style.cssText = "display:flex; justify-content:space-between; align-items:center;";
+
+    var pWidthLabel = document.createElement("label");
+    pWidthLabel.textContent = "Sidebar Size";
+
+    var pWidthRightDiv = document.createElement("div");
+    pWidthRightDiv.style.cssText = "display:flex; align-items:center; gap:8px;";
+
+    var pWidthValDisplay = document.createElement("span");
+    pWidthValDisplay.style.cssText = "color:var(--accent); font-weight:bold; font-size:0.9em;";
+    
+    var curPWidthNum = parseInt(config.panelWidth, 10) || 280;
+    if (curPWidthNum < 260) curPWidthNum = 260;
+    if (isMobile && curPWidthNum > 450) curPWidthNum = 450;
+    pWidthValDisplay.textContent = curPWidthNum + "px";
+
+    var resetPWidthBtn = document.createElement("button");
+    resetPWidthBtn.textContent = "Reset Size";
+    resetPWidthBtn.style.cssText = "padding:2px 6px; font-size:0.75em; cursor:pointer;";
+
+    pWidthRightDiv.appendChild(pWidthValDisplay);
+    pWidthRightDiv.appendChild(resetPWidthBtn);
+
+    pWidthHeader.appendChild(pWidthLabel);
+    pWidthHeader.appendChild(pWidthRightDiv);
+
+    var pWidthSlider = document.createElement("input");
+    pWidthSlider.type = "range";
+    pWidthSlider.min = "260";
+    pWidthSlider.max = isMobile ? "450" : "600";
+    pWidthSlider.step = "5";
+    pWidthSlider.value = curPWidthNum;
+    pWidthSlider.style.cssText = "width:100%; cursor:pointer;";
+
+    var savePWidthTimeout = null;
+    pWidthSlider.addEventListener("input", function () {
+      var val = parseInt(pWidthSlider.value, 10);
+      pWidthValDisplay.textContent = val + "px";
+      config.panelWidth = val + "px";
+      applyConfig();
+      clearTimeout(savePWidthTimeout);
+      savePWidthTimeout = setTimeout(function () {
+        saveConfig();
+      }, 300);
     });
 
-    genBox.appendChild(storyPosRow);
+    resetPWidthBtn.addEventListener("click", function () {
+      pWidthSlider.value = "280";
+      pWidthValDisplay.textContent = "280px";
+      config.panelWidth = "280px";
+      applyConfig();
+      saveConfig();
+    });
 
-    // Story Text Offset Row with Real-Time Smooth Range Slider
+    pWidthRow.appendChild(pWidthHeader);
+    pWidthRow.appendChild(pWidthSlider);
+    genBox.appendChild(pWidthRow);
+
     var sliderRow = document.createElement("div");
-    sliderRow.className = "dolp-custom-row";
+    sliderRow.className = "custom-row";
     sliderRow.style.cssText = "flex-direction:column; align-items:stretch; gap:4px;";
 
     var sliderHeader = document.createElement("div");
-    sliderHeader.className = "dolp-slider-header";
+    sliderHeader.className = "slider-header";
 
     var sliderLabel = document.createElement("label");
     sliderLabel.textContent = "Story Text Offset";
 
     var sliderRightDiv = document.createElement("div");
-    sliderRightDiv.className = "dolp-slider-right";
+    sliderRightDiv.className = "slider-right";
 
     var sliderValDisplay = document.createElement("span");
-    sliderValDisplay.style.cssText = "color:var(--dolp-accent); font-weight:bold; font-size:0.9em;";
+    sliderValDisplay.style.cssText = "color:var(--accent); font-weight:bold; font-size:0.9em;";
+    
     var curOffsetNum = parseInt(config.storyOffset, 10);
-    if (isNaN(curOffsetNum) || curOffsetNum < 0) curOffsetNum = isMobileDevice() ? 0 : 300;
+    if (isNaN(curOffsetNum) || curOffsetNum < 0) curOffsetNum = isMobile ? 20 : 300;
     sliderValDisplay.textContent = curOffsetNum + "px";
 
     var resetOffsetBtn = document.createElement("button");
@@ -1049,36 +1521,21 @@ function restoreOriginalDOM() {
     sliderHeader.appendChild(sliderLabel);
     sliderHeader.appendChild(sliderRightDiv);
 
-    if (isMobileDevice()) {
-      var mobileNote = document.createElement("span");
-      mobileNote.style.cssText = "color:var(--dolp-accent); font-size:0.75em; font-style:italic; margin-top:2px;";
-      mobileNote.textContent = "(Locked to Default on Mobile)";
-      sliderHeader.appendChild(mobileNote);
-    }
-
     var offsetSlider = document.createElement("input");
     offsetSlider.type = "range";
     offsetSlider.min = "0";
-    offsetSlider.max = isMobileDevice() ? "300" : "600";
+    offsetSlider.max = isMobile ? "600" : "1000";
     offsetSlider.step = "5";
     offsetSlider.value = curOffsetNum;
     offsetSlider.style.cssText = "width:100%; cursor:pointer;";
 
-    if (isMobileDevice()) {
-      offsetSlider.disabled = true;
-      resetOffsetBtn.disabled = true;
-      offsetSlider.style.cursor = "not-allowed";
-      resetOffsetBtn.style.cursor = "not-allowed";
-    }
-
     var saveOffsetTimeout = null;
     offsetSlider.addEventListener("input", function () {
-      if (isMobileDevice()) return;
       var val = parseInt(offsetSlider.value, 10);
       sliderValDisplay.textContent = val + "px";
       config.storyOffset = val;
-      document.documentElement.style.setProperty("--dolp-story-offset", val + "px");
-      document.body.style.setProperty("--dolp-story-offset", val + "px");
+      document.documentElement.style.setProperty("--story-offset", val + "px");
+      document.body.style.setProperty("--story-offset", val + "px");
       clearTimeout(saveOffsetTimeout);
       saveOffsetTimeout = setTimeout(function () {
         saveConfig();
@@ -1086,13 +1543,12 @@ function restoreOriginalDOM() {
     });
 
     resetOffsetBtn.addEventListener("click", function () {
-      if (isMobileDevice()) return;
-      var defaultVal = isMobileDevice() ? 0 : 300;
+      var defaultVal = isMobile ? 20 : 300;
       offsetSlider.value = defaultVal;
       sliderValDisplay.textContent = defaultVal + "px";
       config.storyOffset = defaultVal;
-      document.documentElement.style.setProperty("--dolp-story-offset", defaultVal + "px");
-      document.body.style.setProperty("--dolp-story-offset", defaultVal + "px");
+      document.documentElement.style.setProperty("--story-offset", defaultVal + "px");
+      document.body.style.setProperty("--story-offset", defaultVal + "px");
       saveConfig();
     });
 
@@ -1100,45 +1556,63 @@ function restoreOriginalDOM() {
     sliderRow.appendChild(offsetSlider);
     genBox.appendChild(sliderRow);
 
-    genBox.appendChild(createCustomRow("Sideview Mirror", "checkbox", config.sideviewEnabled, function (val) {
-      config.sideviewEnabled = val;
-      saveConfig();
-      applyConfig();
-    }));
-
-    // Sideview Opacity Slider
     var svOpRow = document.createElement("div");
-    svOpRow.className = "dolp-custom-row";
+    svOpRow.className = "custom-row";
     svOpRow.style.cssText = "flex-direction:column; align-items:stretch; gap:4px;";
+    
     var svOpHeader = document.createElement("div");
     svOpHeader.style.cssText = "display:flex; justify-content:space-between; align-items:center;";
+    
     var svOpLabel = document.createElement("label");
     svOpLabel.textContent = "Sideview Mirror Opacity";
+
+    var svOpRightDiv = document.createElement("div");
+    svOpRightDiv.style.cssText = "display:flex; align-items:center; gap:8px;";
+
     var svOpValDisplay = document.createElement("span");
-    svOpValDisplay.style.cssText = "color:var(--dolp-accent); font-weight:bold; font-size:0.9em;";
-    svOpValDisplay.textContent = (config.sideviewOpacity || 100) + "%";
+    svOpValDisplay.style.cssText = "color:var(--accent); font-weight:bold; font-size:0.9em;";
+    svOpValDisplay.textContent = (typeof config.sideviewOpacity !== "undefined" ? config.sideviewOpacity : 100) + "%";
+
+    var resetSvOpBtn = document.createElement("button");
+    resetSvOpBtn.textContent = "Reset Opacity";
+    resetSvOpBtn.style.cssText = "padding:2px 6px; font-size:0.75em; cursor:pointer;";
+
+    svOpRightDiv.appendChild(svOpValDisplay);
+    svOpRightDiv.appendChild(resetSvOpBtn);
+
     svOpHeader.appendChild(svOpLabel);
-    svOpHeader.appendChild(svOpValDisplay);
+    svOpHeader.appendChild(svOpRightDiv);
 
     var svOpSlider = document.createElement("input");
     svOpSlider.type = "range";
-    svOpSlider.min = "10";
+    svOpSlider.min = "0";
     svOpSlider.max = "100";
     svOpSlider.step = "5";
-    svOpSlider.value = config.sideviewOpacity || 100;
+    svOpSlider.value = (typeof config.sideviewOpacity !== "undefined") ? config.sideviewOpacity : 100;
     svOpSlider.style.cssText = "width:100%; cursor:pointer;";
+
     svOpSlider.addEventListener("input", function () {
       var val = parseInt(svOpSlider.value, 10);
       svOpValDisplay.textContent = val + "%";
       config.sideviewOpacity = val;
+      config.sideviewEnabled = (val > 0);
       saveConfig();
       applyConfig();
     });
+
+    resetSvOpBtn.addEventListener("click", function () {
+      svOpSlider.value = "100";
+      svOpValDisplay.textContent = "100%";
+      config.sideviewOpacity = 100;
+      config.sideviewEnabled = true;
+      saveConfig();
+      applyConfig();
+    });
+
     svOpRow.appendChild(svOpHeader);
     svOpRow.appendChild(svOpSlider);
     genBox.appendChild(svOpRow);
 
-    // Sideview Position Side
     genBox.appendChild(createCustomSelect("Sideview Mirror Side", [
       { label: "Right Side", val: "right" },
       { label: "Left Side",  val: "left" }
@@ -1148,32 +1622,48 @@ function restoreOriginalDOM() {
       applyConfig();
     }));
 
+    genBox.appendChild(createCustomRow("Money/Time Stat in Visuals", "checkbox", config.statsInVisuals, function (val) {
+      config.statsInVisuals = val;
+      saveConfig();
+      applyConfig();
+      requestSync(true);
+    }));
+
     genBox.appendChild(createCustomRow("Compact Statbars", "checkbox", config.compactStats, function (val) {
       config.compactStats = val;
       saveConfig();
       applyConfig();
     }));
 
+    genBox.appendChild(createCustomRow("Disable Paperdoll Detection", "checkbox", config.disablePaperdoll, function (val) {
+      config.disablePaperdoll = val;
+      cachedPaperdollActive = null;
+      saveConfig();
+      applyConfig();
+      updateStageHeight();
+      scheduleStageHeightRetries();
+    }));
+
     win.appendChild(genBox);
 
-    // Button Volume Section
-    var btnBox = document.createElement("div");
-    btnBox.className = "dolp-custom-box";
-    var btnTitle = document.createElement("div");
-    btnTitle.className = "dolp-custom-title";
-    btnTitle.textContent = "Button Inner Colors";
-    btnBox.appendChild(btnTitle);
+    var colorGridTable = document.createElement("div");
+    colorGridTable.className = "color-grid";
 
-    var customBtnRow = createCustomRow("Custom Button Color", "color", getActiveBtnHex(), function (val) {
+    var boxBtn = document.createElement("div");
+    boxBtn.className = "custom-box";
+    var titleBtn = document.createElement("div");
+    titleBtn.className = "custom-title";
+    titleBtn.textContent = "Button Inner Colors";
+    boxBtn.appendChild(titleBtn);
+
+    var cBtnInputRow = createCustomRow("Custom Color", "color", getActiveBtnHex(), function (val) {
       config.customBtnColor = val;
       config.btnTheme = "custom";
       saveConfig();
       applyConfig();
     });
-    customBtnRow.id = "dolp-custom-btn-row";
-    customBtnRow.style.display = "flex";
 
-    btnBox.appendChild(createCustomSelect("Button Theme Preset", [
+    var selectBtnPreset = createCustomSelect("Preset", [
       { label: "Default Dark Slate", val: "default" },
       { label: "Midnight Purple",   val: "purple" },
       { label: "Deep Crimson",      val: "crimson" },
@@ -1182,24 +1672,45 @@ function restoreOriginalDOM() {
       { label: "Custom Inner Color", val: "custom" }
     ], config.btnTheme, function (val) {
       config.btnTheme = val;
-      var btnColorInput = customBtnRow.querySelector("input[type='color']");
-      if (btnColorInput) btnColorInput.value = getActiveBtnHex();
+      var colorInput = cBtnInputRow.querySelector("input[type='color']");
+      if (colorInput) colorInput.value = getActiveBtnHex();
       saveConfig();
       applyConfig();
-    }));
+    });
 
-    btnBox.appendChild(customBtnRow);
-    win.appendChild(btnBox);
+    var selectBtnStyle = createCustomSelect("Button Material Style", [
+      { label: "Solid",   val: "solid" },
+      { label: "Flat",    val: "flat" },
+      { label: "Neon",    val: "neon" },
+      { label: "Clay",    val: "clay" },
+      { label: "Radiant", val: "radiant" },
+      { label: "Cyber",   val: "cyber" }
+    ], config.btnStyle || "solid", function (val) {
+      config.btnStyle = val;
+      saveConfig();
+      applyConfig();
+    });
 
-// Base Theme Section
-    var baseBox = document.createElement("div");
-    baseBox.className = "dolp-custom-box";
-    var baseTitle = document.createElement("div");
-    baseTitle.className = "dolp-custom-title";
-    baseTitle.textContent = "Base UI Theme";
-    baseBox.appendChild(baseTitle);
+    boxBtn.appendChild(selectBtnPreset);
+    boxBtn.appendChild(selectBtnStyle);
+    boxBtn.appendChild(cBtnInputRow);
+    colorGridTable.appendChild(boxBtn);
 
-    var baseSelectRow = createCustomSelect("Base Theme Preset", [
+    var boxBase = document.createElement("div");
+    boxBase.className = "custom-box";
+    var titleBase = document.createElement("div");
+    titleBase.className = "custom-title";
+    titleBase.textContent = "Base UI Theme";
+    boxBase.appendChild(titleBase);
+
+    var cBaseInputRow = createCustomRow("Custom Base", "color", getActiveBaseHex(), function (val) {
+      config.customBase = val;
+      config.baseTheme = "custom";
+      saveConfig();
+      applyConfig();
+    });
+
+    var selectBasePreset = createCustomSelect("Preset", [
       { label: "Default (Game Theme)", val: "game" },
       { label: "Midnight Dark",        val: "midnight" },
       { label: "Obsidian Black",       val: "obsidian" },
@@ -1210,47 +1721,31 @@ function restoreOriginalDOM() {
       { label: "Custom Base Color",    val: "custom" }
     ], config.baseTheme, function (val) {
       config.baseTheme = val;
-      var baseColorInput = customBaseRow.querySelector("input[type='color']");
-      if (baseColorInput) baseColorInput.value = getActiveBaseHex();
+      var colorInput = cBaseInputRow.querySelector("input[type='color']");
+      if (colorInput) colorInput.value = getActiveBaseHex();
       saveConfig();
       applyConfig();
     });
 
-    var baseSelect = baseSelectRow.querySelector("select");
+    boxBase.appendChild(selectBasePreset);
+    boxBase.appendChild(cBaseInputRow);
+    colorGridTable.appendChild(boxBase);
 
-    var customBaseRow = createCustomRow("Custom Base Color", "color", getActiveBaseHex(), function (val) {
-      config.customBase = val;
-      config.baseTheme = "custom";
-      if (baseSelect) baseSelect.value = "custom";
-      saveConfig();
-      applyConfig();
-    });
-    customBaseRow.id = "dolp-custom-base-row";
-    customBaseRow.style.display = "flex";
+    var boxAccent = document.createElement("div");
+    boxAccent.className = "custom-box";
+    var titleAccent = document.createElement("div");
+    titleAccent.className = "custom-title";
+    titleAccent.textContent = "UI Accent Color";
+    boxAccent.appendChild(titleAccent);
 
-    baseBox.appendChild(baseSelectRow);
-    baseBox.appendChild(customBaseRow);
-    win.appendChild(baseBox);
-
-
-    // Accent Color Section
-    var accentBox = document.createElement("div");
-    accentBox.className = "dolp-custom-box";
-    var accentTitle = document.createElement("div");
-    accentTitle.className = "dolp-custom-title";
-    accentTitle.textContent = "UI Accent Color";
-    accentBox.appendChild(accentTitle);
-
-    var customAccentRow = createCustomRow("Custom Accent Color", "color", getActiveAccentHex(), function (val) {
+    var cAccentInputRow = createCustomRow("Custom Accent", "color", getActiveAccentHex(), function (val) {
       config.customAccent = val;
       config.accentColor = "custom";
       saveConfig();
       applyConfig();
     });
-    customAccentRow.id = "dolp-custom-accent-row";
-    customAccentRow.style.display = "flex";
 
-    accentBox.appendChild(createCustomSelect("UI Accent Preset", [
+    var selectAccentPreset = createCustomSelect("Preset", [
       { label: "Default (Game Accent)", val: "game" },
       { label: "Gold",                  val: "gold" },
       { label: "Purple",                val: "purple" },
@@ -1263,37 +1758,31 @@ function restoreOriginalDOM() {
       { label: "Custom Accent Color",   val: "custom" }
     ], config.accentColor, function (val) {
       config.accentColor = val;
-      var accentColorInput = customAccentRow.querySelector("input[type='color']");
-      if (accentColorInput) accentColorInput.value = getActiveAccentHex();
-      if (config.storyAccentColor === "ui" || config.storyAccentColor === "match_ui") {
-        var storyAccentColorInput = document.querySelector("#dolp-custom-story-accent-row input[type='color']");
-        if (storyAccentColorInput) storyAccentColorInput.value = getActiveStoryAccentHex();
-      }
+      var colorInput = cAccentInputRow.querySelector("input[type='color']");
+      if (colorInput) colorInput.value = getActiveAccentHex();
       saveConfig();
       applyConfig();
-    }));
+    });
 
-    accentBox.appendChild(customAccentRow);
-    win.appendChild(accentBox);
+    boxAccent.appendChild(selectAccentPreset);
+    boxAccent.appendChild(cAccentInputRow);
+    colorGridTable.appendChild(boxAccent);
 
-    // Story Text Accent Color Section
-    var storyAccentBox = document.createElement("div");
-    storyAccentBox.className = "dolp-custom-box";
-    var storyAccentTitle = document.createElement("div");
-    storyAccentTitle.className = "dolp-custom-title";
-    storyAccentTitle.textContent = "Story Text Accent Color";
-    storyAccentBox.appendChild(storyAccentTitle);
+    var boxStoryAccent = document.createElement("div");
+    boxStoryAccent.className = "custom-box";
+    var titleStoryAccent = document.createElement("div");
+    titleStoryAccent.className = "custom-title";
+    titleStoryAccent.textContent = "Story Text Accent";
+    boxStoryAccent.appendChild(titleStoryAccent);
 
-    var customStoryAccentRow = createCustomRow("Custom Story Accent", "color", getActiveStoryAccentHex(), function (val) {
+    var cStoryAccentInputRow = createCustomRow("Custom Accent", "color", getActiveStoryAccentHex(), function (val) {
       config.customStoryAccent = val;
       config.storyAccentColor = "custom";
       saveConfig();
       applyConfig();
     });
-    customStoryAccentRow.id = "dolp-custom-story-accent-row";
-    customStoryAccentRow.style.display = "flex";
 
-    storyAccentBox.appendChild(createCustomSelect("Story Text Accent Preset", [
+    var selectStoryAccentPreset = createCustomSelect("Preset", [
       { label: "Match UI Accent Color", val: "ui" },
       { label: "Default (Game Native)", val: "game" },
       { label: "Gold",                  val: "gold" },
@@ -1307,25 +1796,27 @@ function restoreOriginalDOM() {
       { label: "Custom Accent Color",   val: "custom" }
     ], config.storyAccentColor || "ui", function (val) {
       config.storyAccentColor = val;
-      var storyAccentColorInput = customStoryAccentRow.querySelector("input[type='color']");
-      if (storyAccentColorInput) storyAccentColorInput.value = getActiveStoryAccentHex();
+      var colorInput = cStoryAccentInputRow.querySelector("input[type='color']");
+      if (colorInput) colorInput.value = getActiveStoryAccentHex();
       saveConfig();
       applyConfig();
-    }));
+    });
 
-    storyAccentBox.appendChild(customStoryAccentRow);
-    win.appendChild(storyAccentBox);
+    boxStoryAccent.appendChild(selectStoryAccentPreset);
+    boxStoryAccent.appendChild(cStoryAccentInputRow);
+    colorGridTable.appendChild(boxStoryAccent);
 
-    // Presets Manager
+    win.appendChild(colorGridTable);
+
     var mgrBox = document.createElement("div");
-    mgrBox.className = "dolp-custom-box";
+    mgrBox.className = "custom-box";
     var mgrTitle = document.createElement("div");
-    mgrTitle.className = "dolp-custom-title";
+    mgrTitle.className = "custom-title";
     mgrTitle.textContent = "Custom Themes Manager";
     mgrBox.appendChild(mgrTitle);
 
     var saveRow = document.createElement("div");
-    saveRow.className = "dolp-custom-row";
+    saveRow.className = "custom-row";
     saveRow.style.cssText = "display:flex; flex-wrap:wrap; gap:6px; width:100%; box-sizing:border-box;";
     
     var saveInput = document.createElement("input");
@@ -1342,7 +1833,7 @@ function restoreOriginalDOM() {
     mgrBox.appendChild(saveRow);
 
     var presetRow = document.createElement("div");
-    presetRow.className = "dolp-custom-row";
+    presetRow.className = "custom-row";
     presetRow.style.cssText = "display:flex; flex-wrap:wrap; gap:6px; width:100%; box-sizing:border-box;";
     
     var presetSelect = document.createElement("select");
@@ -1393,6 +1884,7 @@ function restoreOriginalDOM() {
         storyAccentColor: config.storyAccentColor,
         customStoryAccent: config.customStoryAccent,
         btnTheme: config.btnTheme,
+        btnStyle: config.btnStyle,
         customBtnColor: config.customBtnColor
       };
       saveConfig();
@@ -1411,10 +1903,11 @@ function restoreOriginalDOM() {
         config.storyAccentColor = theme.storyAccentColor || "ui";
         config.customStoryAccent = theme.customStoryAccent || "#ffd700";
         config.btnTheme = theme.btnTheme || "default";
+        config.btnStyle = theme.btnStyle || "solid";
         config.customBtnColor = theme.customBtnColor || "#26262a";
         saveConfig();
         applyConfig();
-        var existing = el("dolp-ui-settings-overlay-container");
+        var existing = el("ui-settings-overlay-container");
         if (existing) existing.remove();
         openUISettingsOverlay();
       }
@@ -1429,9 +1922,8 @@ function restoreOriginalDOM() {
       }
     });
 
-    // Export / Import Row - Contained Box Width
     var ioRow = document.createElement("div");
-    ioRow.className = "dolp-custom-row dolp-io-row";
+    ioRow.className = "custom-row io-row";
     ioRow.style.cssText = "flex-direction:column; align-items:stretch; width:100%; box-sizing:border-box;";
 
     var ioText = document.createElement("textarea");
@@ -1458,12 +1950,12 @@ function restoreOriginalDOM() {
         storyAccentColor: config.storyAccentColor,
         customStoryAccent: config.customStoryAccent,
         btnTheme: config.btnTheme,
+        btnStyle: config.btnStyle,
         customBtnColor: config.customBtnColor,
         savedThemes: config.savedThemes || {}
       };
       ioText.value = JSON.stringify(data);
     });
-
 
     importBtn.addEventListener("click", function () {
       try {
@@ -1476,11 +1968,12 @@ function restoreOriginalDOM() {
           if (data.storyAccentColor) config.storyAccentColor = data.storyAccentColor;
           if (data.customStoryAccent) config.customStoryAccent = data.customStoryAccent;
           if (data.btnTheme) config.btnTheme = data.btnTheme;
+          if (data.btnStyle) config.btnStyle = data.btnStyle;
           if (data.customBtnColor) config.customBtnColor = data.customBtnColor;
           if (data.savedThemes) config.savedThemes = data.savedThemes;
           saveConfig();
           applyConfig();
-          var existing = el("dolp-ui-settings-overlay-container");
+          var existing = el("ui-settings-overlay-container");
           if (existing) existing.remove();
           openUISettingsOverlay();
         }
@@ -1510,8 +2003,57 @@ function restoreOriginalDOM() {
 
   function openUISettingsOverlay() {
     ensureUISettingsOverlay();
-    var container = el("dolp-ui-settings-overlay-container");
+    var container = el("ui-settings-overlay-container");
     if (container) container.classList.remove("hidden");
+  }
+
+  var cachedPaperdollActive = null;
+
+  function isPaperdollEnabled() {
+    if (config.disablePaperdoll) return false;
+    if (cachedPaperdollActive !== null) return cachedPaperdollActive;
+    if (window.V && window.V.options) {
+      var pd = window.V.options.paperdoll;
+      if (pd === true || pd === 1 || pd === "enabled") {
+        cachedPaperdollActive = true;
+        return true;
+      }
+    }
+    if (document.querySelector("#imgInv2, .mainCanvasnobonder, #paperdoll, .paperdollCanvas")) {
+      cachedPaperdollActive = true;
+      return true;
+    }
+    cachedPaperdollActive = false;
+    return false;
+  }
+
+  function getNativeVisualHeight(scaler) {
+    if (config.disablePaperdoll) {
+      return 192;
+    }
+    var imgElem = (scaler ? scaler.querySelector("#img") : null) || el("img") || document.querySelector("#img");
+    if (imgElem) {
+      var h = imgElem.offsetHeight || imgElem.naturalHeight || imgElem.height;
+      if (h && h > 50) return h;
+    }
+    return isPaperdollEnabled() ? 236 : 192;
+  }
+
+  function updateStageHeight() {
+    var stage = el("visual-stage");
+    var scaler = el("stage-scaler");
+    if (!stage || !scaler) return;
+    var scale = parseFloat(document.documentElement.style.getPropertyValue("--stage-scale")) || 1;
+    var nativeH = getNativeVisualHeight(scaler);
+    stage.style.height = Math.round(nativeH * scale) + "px";
+  }
+
+  function scheduleStageHeightRetries() {
+    updateStageHeight();
+    setTimeout(updateStageHeight, 50);
+    setTimeout(updateStageHeight, 150);
+    setTimeout(updateStageHeight, 300);
+    setTimeout(updateStageHeight, 600);
   }
 
   function syncContent() {
@@ -1524,46 +2066,87 @@ function restoreOriginalDOM() {
 
     ensureSidebarDOM();
 
-    var sidebar     = el("dolp-sidebar");
-    var headerStats = el("dolp-stats-container");
-    var pVis        = el("dolp-panel-visuals");
-    var pAttr       = el("dolp-panel-attributes");
-    var pSet        = el("dolp-panel-settings");
+    var sidebar     = el("sidebar");
+    var headerStats = el("stats-container");
+    var pVis        = el("panel-visuals");
+    var pAttr       = el("panel-attributes");
+    var pSet        = el("panel-settings");
 
     if (!pVis || !pAttr || !pSet || !headerStats) return;
 
-var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNAL", "STATS", "FEATS"];
+    var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNAL", "STATS", "FEATS"];
     var blacklistedTexts = ["RESTART", "SHARE", "SHARES", "SETTINGS", "UI SETTINGS"];
 
     var overlayButtons = el("overlayButtons") || document.querySelector("#overlayButtons");
     var captionContent = el("storyCaptionContent") || document.querySelector("#storyCaptionContent");
+    var captionDiv     = el("storyCaptionDiv") || document.querySelector("#storyCaptionDiv");
+    var storyCap       = el("story-caption") || document.querySelector("#story-caption");
+    var uiBarBody      = el("ui-bar-body") || document.querySelector("#ui-bar-body");
+    var currentPassage = (window.SugarCube && SugarCube.State) ? SugarCube.State.passage : (window.V ? window.V.passage : "");
+    var isStartPassage = (currentPassage === "Start" || currentPassage === "Start Pass" || !currentPassage);
 
-    var nativeOverlayBtns = overlayButtons ? Array.from(overlayButtons.querySelectorAll("button, .macro-button, a")) : [];
-    var nativeCaptionBtns = captionContent ? Array.from(captionContent.querySelectorAll("button, .macro-button, a")) : [];
+    var nativeStartCap = el("startCaption") || document.querySelector("#startCaption");
+    if (nativeStartCap) {
+      var isNativeInStory = !!(nativeStartCap.closest("#storyCaptionContent") || nativeStartCap.closest("#storyCaptionDiv") || nativeStartCap.closest("#story"));
 
-    var hasFreshNativeBtns = (nativeOverlayBtns.length > 0 || nativeCaptionBtns.length > 0);
+      if (!isStartPassage && !isNativeInStory) {
+        nativeStartCap.remove();
+        nativeStartCap = null;
+      }
+    }
+
+    var rescuedStats = el("stats") || document.querySelector("#stats");
+    if (rescuedStats && rescuedStats.parentElement) {
+      rescuedStats.parentElement.removeChild(rescuedStats);
+    }
+
+    var rescuedSky = el("canvasSkybox") || document.querySelector("#canvasSkybox");
+    if (rescuedSky && rescuedSky.parentElement) {
+      rescuedSky.parentElement.removeChild(rescuedSky);
+    }
+
+    var rescuedImgWrap = el("sidebar-img-container") || document.querySelector("#sidebar-img-container");
+    if (rescuedImgWrap && rescuedImgWrap.parentElement) {
+      rescuedImgWrap.parentElement.removeChild(rescuedImgWrap);
+    }
+
+    var rescuedStatMeters = el("statmeters") || document.querySelector("#statmeters");
+    if (rescuedStatMeters && rescuedStatMeters.parentElement) {
+      rescuedStatMeters.parentElement.removeChild(rescuedStatMeters);
+    }
+
+    var rescuedCaptionContent = el("storyCaptionContent") || document.querySelector("#storyCaptionContent");
+    if (rescuedCaptionContent && rescuedCaptionContent.parentElement) {
+      rescuedCaptionContent.parentElement.removeChild(rescuedCaptionContent);
+    }
+
+    var rescuedStartCap = el("startCaption") || document.querySelector("#startCaption");
+    if (rescuedStartCap && rescuedStartCap.parentElement) {
+      rescuedStartCap.parentElement.removeChild(rescuedStartCap);
+    }
 
     var allSourceBtns = [];
     var seenTexts = {};
 
+    function isButtonValidAndEnabled(b) {
+      if (!b) return false;
+      if (b.disabled || b.hasAttribute("disabled") || b.getAttribute("disabled") === "disabled") return false;
+      if (b.getAttribute("aria-disabled") === "true") return false;
+      if (b.classList.contains("disabled") || b.classList.contains("hidden")) return false;
+      if (b.style && (b.style.display === "none" || b.style.visibility === "hidden")) return false;
+      return true;
+    }
+
     function collectButtonsFrom(container) {
       if (!container) return;
-      var btns = Array.from(container.querySelectorAll("button, .macro-button, a"));
+      var btns = Array.from(container.querySelectorAll("button, .macro-button"));
       btns.forEach(function (b) {
         if (b.closest("#menu") || b.closest(".menu")) return;
-        if (b.id === "dolp-ui-toggle-btn" || b.id === "dolp-master-toggle" || b.id === "dolp-ui-settings-btn" || b.id === "dolp-start-ui-settings-btn" || b.id === "dolp-classic-ui-settings-btn" || b.classList.contains("dolp-statmeter-arrow") || b.classList.contains("dolp-tab-btn")) {
+        if (b.id === "ui-toggle-btn" || b.id === "master-toggle" || b.id === "ui-settings-btn" || b.id === "start-ui-settings-btn" || b.id === "classic-ui-settings-btn" || b.classList.contains("statmeter-arrow") || b.classList.contains("tab-btn")) {
           return;
         }
 
-        // Ignore buttons that are natively disabled, hidden, or aria-hidden
-        if (b.disabled || b.classList.contains("hidden") || b.getAttribute("aria-hidden") === "true") {
-          return;
-        }
-
-        try {
-          var cs = window.getComputedStyle ? window.getComputedStyle(b) : null;
-          if (cs && (cs.display === "none" || cs.visibility === "hidden")) return;
-        } catch (_) {}
+        if (!isButtonValidAndEnabled(b)) return;
 
         var txt = (b.textContent || "").trim().toUpperCase();
         if (!txt || txt.length < 2) return;
@@ -1576,73 +2159,179 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
       });
     }
 
-    // Collect fresh buttons from native containers first
+    var freshNativeBtns = [];
+    var nativeContainers = [overlayButtons, captionContent, captionDiv, storyCap, uiBarBody, nativeStartCap];
+    
+    nativeContainers.forEach(function (container) {
+      if (!container) return;
+      var btns = Array.from(container.querySelectorAll("button, .macro-button"));
+      btns.forEach(function (b) {
+        if (b.closest("#menu") || b.closest(".menu") || b.closest("#sidebar")) return;
+        if (b.id === "ui-toggle-btn" || b.id === "master-toggle" || b.id === "ui-settings-btn" || b.id === "start-ui-settings-btn" || b.id === "classic-ui-settings-btn" || b.classList.contains("statmeter-arrow") || b.classList.contains("tab-btn")) return;
+        if (!isButtonValidAndEnabled(b)) return;
+        var txt = (b.textContent || "").trim().toUpperCase();
+        if (!txt || txt.length < 2 || blacklistedTexts.indexOf(txt) !== -1) return;
+        freshNativeBtns.push(b);
+      });
+    });
+
+    var hasFreshNativeBtns = (freshNativeBtns.length > 0);
+
     collectButtonsFrom(overlayButtons);
     collectButtonsFrom(captionContent);
+    collectButtonsFrom(captionDiv);
+    collectButtonsFrom(storyCap);
+    collectButtonsFrom(uiBarBody);
+    collectButtonsFrom(nativeStartCap);
 
-    // Only collect from mod panels if native containers are currently empty (e.g. sub-sync on same passage)
     if (!hasFreshNativeBtns) {
       collectButtonsFrom(pAttr);
       collectButtonsFrom(pSet);
     }
-    
+
+    var rayIcons = document.querySelectorAll("#rayseticon");
+    if (rayIcons.length > 1) {
+      for (var r = 1; r < rayIcons.length; r++) {
+        rayIcons[r].remove();
+      }
+    }
+
+    var existingUISetBtn = el("ui-settings-btn");
+    var oldClassicBtn = el("classic-ui-settings-btn");
+    if (oldClassicBtn) oldClassicBtn.remove();
+
     headerStats.innerHTML = "";
     pVis.innerHTML = "";
     pAttr.innerHTML = "";
     pSet.innerHTML = "";
 
     var attrBtns = document.createElement("div");
-    attrBtns.id = "dolp-attr-buttons";
-    attrBtns.className = "dolp-btn-grid";
+    attrBtns.id = "attr-buttons";
+    attrBtns.className = "btn-grid";
 
     var setBtns = document.createElement("div");
-    setBtns.id = "dolp-set-buttons";
-    setBtns.className = "dolp-btn-grid";
+    setBtns.id = "set-buttons";
+    setBtns.className = "btn-grid";
 
-/* Start Menu Check */
-    var startCaption = el("startCaption");
-    if (startCaption) {
-      if (sidebar) sidebar.classList.add("dolp-start-menu");
-      pVis.appendChild(startCaption);
-// Add #story-title at the top of start menu caption (Mod UI only)
+    if (nativeStartCap && isStartPassage) {
+      if (sidebar) sidebar.classList.add("mod-start-menu");
+      if (pVis && nativeStartCap.parentElement !== pVis) {
+        pVis.appendChild(nativeStartCap);
+      }
+
       var storyTitle = el("story-title");
       var titleText = (storyTitle ? storyTitle.innerHTML : "").trim() || (window.Story && Story.title ? Story.title : "Degrees of Lewdity");
       if (titleText) {
-        var existingModTitle = startCaption.querySelector("#dolp-start-story-title");
+        var existingModTitle = nativeStartCap.querySelector("#start-story-title");
         if (!existingModTitle) {
           existingModTitle = document.createElement("h1");
-          existingModTitle.id = "dolp-start-story-title";
+          existingModTitle.id = "start-story-title";
           existingModTitle.className = "title";
-          existingModTitle.style.cssText = "margin-bottom:12px; text-align:center; color:var(--dolp-accent); font-weight:bold; font-size:1.8em; text-shadow:0 0 8px var(--dolp-accent, #ffd700), 0 0 16px rgba(255, 215, 0, 0.4);";
-          startCaption.insertBefore(existingModTitle, startCaption.firstChild);
+          existingModTitle.style.cssText = "margin-bottom:0px !important; padding-bottom:50px !important; text-align:center; color:var(--accent); font-weight:bold; font-size:1.8em; text-shadow:0 0 8px var(--accent, #ffd700), 0 0 16px rgba(255, 215, 0, 0.4);";
+          nativeStartCap.insertBefore(existingModTitle, nativeStartCap.firstChild);
         }
         existingModTitle.innerHTML = titleText;
       }
 
-      // Position #startingPlayerImage directly below the sidebar menu title (Mod UI only)
-      var startImg = el("startingPlayerImage") || document.querySelector("#startingPlayerImage");
+      var startImg = el("startingPlayerImage") || document.querySelector("#startingPlayerImage") || el("startImg");
       if (startImg) {
-        startImg.style.display = "block";
-        startImg.style.visibility = "visible";
-        var topTitle = startCaption.querySelector("#dolp-start-story-title") || startCaption.querySelector("h1, h2, .title");
-        if (topTitle && topTitle.nextSibling !== startImg) {
-          startCaption.insertBefore(startImg, topTitle.nextSibling);
+        var topTitle = nativeStartCap.querySelector("#start-story-title") || nativeStartCap.querySelector("h1, h2, .title");
+        if (topTitle && topTitle.nextSibling !== startImg && topTitle.parentElement === nativeStartCap) {
+          nativeStartCap.insertBefore(startImg, topTitle.nextSibling);
         }
       }
 
-      var existingStartUISet = startCaption.querySelector("#dolp-start-ui-settings-btn");
+      var startActionBtns = Array.from(nativeStartCap.querySelectorAll("button, .macro-button")).filter(function (b) {
+        if (b.id === "start-ui-settings-btn" || b.id === "ui-toggle-btn" || b.id === "classic-ui-settings-btn") return false;
+        var txt = (b.textContent || "").toUpperCase().trim();
+        return txt.length > 1;
+      });
+
+      var extraBtnsContainer = nativeStartCap.querySelector(".start-extra-btns");
+      if (!extraBtnsContainer) {
+        extraBtnsContainer = document.createElement("div");
+        extraBtnsContainer.className = "start-extra-btns";
+        extraBtnsContainer.style.cssText = "margin-bottom:8px; display:flex; flex-direction:column; gap:6px;";
+        nativeStartCap.appendChild(extraBtnsContainer);
+      }
+
+      var mainActionGrid = nativeStartCap.querySelector(".start-btn-grid");
+      if (!mainActionGrid) {
+        mainActionGrid = document.createElement("div");
+        mainActionGrid.className = "start-btn-grid";
+        nativeStartCap.appendChild(mainActionGrid);
+      }
+
+      if (mainActionGrid.parentElement === nativeStartCap && extraBtnsContainer.nextSibling !== mainActionGrid) {
+        nativeStartCap.insertBefore(extraBtnsContainer, mainActionGrid);
+      }
+
+      var saveStartBtn = null;
+      var optionsStartBtn = null;
+      var featsStartBtn = null;
+      var otherStartBtns = [];
+
+      startActionBtns.forEach(function (btn) {
+        var txt = (btn.textContent || "").toUpperCase().trim();
+        if (txt.indexOf("SAVE") !== -1) {
+          saveStartBtn = btn;
+        } else if (txt.indexOf("OPTION") !== -1) {
+          optionsStartBtn = btn;
+        } else if (txt.indexOf("FEAT") !== -1) {
+          featsStartBtn = btn;
+        } else {
+          otherStartBtns.push(btn);
+        }
+      });
+
+      otherStartBtns.forEach(function (btn) {
+        btn.classList.add("btn-full");
+        btn.style.cssText = "width:100% !important; max-width:100% !important; border-radius:7px !important;";
+        if (btn.parentElement !== extraBtnsContainer) {
+          extraBtnsContainer.appendChild(btn);
+        }
+      });
+
+      if (saveStartBtn) {
+        saveStartBtn.classList.add("btn-full");
+        if (saveStartBtn.parentElement !== mainActionGrid) {
+          mainActionGrid.appendChild(saveStartBtn);
+        }
+      }
+
+      if (optionsStartBtn || featsStartBtn) {
+        var bottomPairRow = mainActionGrid.querySelector(".start-bottom-row");
+        if (!bottomPairRow) {
+          bottomPairRow = document.createElement("div");
+          bottomPairRow.className = "start-bottom-row";
+          mainActionGrid.appendChild(bottomPairRow);
+        }
+        if (optionsStartBtn) {
+          optionsStartBtn.classList.remove("btn-full");
+          if (optionsStartBtn.parentElement !== bottomPairRow) {
+            bottomPairRow.appendChild(optionsStartBtn);
+          }
+        }
+        if (featsStartBtn) {
+          featsStartBtn.classList.remove("btn-full");
+          if (featsStartBtn.parentElement !== bottomPairRow) {
+            bottomPairRow.appendChild(featsStartBtn);
+          }
+        }
+      }
+
+      var existingStartUISet = nativeStartCap.querySelector("#start-ui-settings-btn");
       if (!existingStartUISet) {
         var startUISetBtn = document.createElement("button");
-        startUISetBtn.id = "dolp-start-ui-settings-btn";
-        startUISetBtn.className = "macro-button";
+        startUISetBtn.id = "start-ui-settings-btn";
+        startUISetBtn.className = "macro-button btn-full";
         startUISetBtn.textContent = "UI SETTINGS";
-        startUISetBtn.style.cssText = "margin-top:10px; width:100%; cursor:pointer;";
         startUISetBtn.addEventListener("click", function (e) {
           e.stopPropagation();
           e.preventDefault();
           openUISettingsOverlay();
         });
-        startCaption.appendChild(startUISetBtn);
+        nativeStartCap.appendChild(startUISetBtn);
       }
 
       wireOriginalToggle();
@@ -1650,62 +2339,98 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
       applyConfig();
       return;
     } else {
-      if (sidebar) sidebar.classList.remove("dolp-start-menu");
+      if (sidebar) sidebar.classList.remove("mod-start-menu");
     }
     
-    /* 1. Stats Bar into Header */
-    var statsElem = el("stats") || document.querySelector("#stats");
+    /* 1. Stats Bar Placement */
+    var statsElem = rescuedStats || el("stats") || document.querySelector("#stats");
     if (statsElem) {
-      headerStats.appendChild(statsElem);
+      if (!config.statsInVisuals) {
+        headerStats.appendChild(statsElem);
+      }
       statsElem.style.display = "block";
       statsElem.style.visibility = "visible";
       wireStatsClick(statsElem);
     }
 
-    /* 2. Visual Stage */
+    /* 2. Visual Stage & Scaled Base Host */
     var stage = document.createElement("div");
-    stage.id = "dolp-visual-stage";
+    stage.id = "visual-stage";
 
-    var sky     = el("canvasSkybox") || document.querySelector("#canvasSkybox");
-    var imgWrap = el("sidebar-img-container") || document.querySelector("#sidebar-img-container");
+    var stageScaler = document.createElement("div");
+    stageScaler.id = "stage-scaler";
+    stage.appendChild(stageScaler);
 
-    if (sky) stage.appendChild(sky);
-    if (imgWrap) stage.appendChild(imgWrap);
+    var sky     = rescuedSky || el("canvasSkybox") || document.querySelector("#canvasSkybox");
+    var imgWrap = rescuedImgWrap || el("sidebar-img-container") || document.querySelector("#sidebar-img-container");
+
+    if (sky) stageScaler.appendChild(sky);
+    if (imgWrap) stageScaler.appendChild(imgWrap);
+
+    var rayIds = ["imgInv", "imgInv2", "imgInv3", "rayseticon", "characterTemperature", "characterTemperatureTooltip", "spray", "condoms"];
+    rayIds.forEach(function (id) {
+      var elem = el(id) || document.querySelector("#" + id);
+      if (elem && !stageScaler.contains(elem)) {
+        stageScaler.appendChild(elem);
+      }
+    });
+
+    var rayClasses = [".spray-shelf", ".condoms-sidebar", ".pepper-sprays"];
+    rayClasses.forEach(function (cls) {
+      var elem = document.querySelector(cls);
+      if (elem && !stageScaler.contains(elem)) {
+        stageScaler.appendChild(elem);
+      }
+    });
 
     pVis.appendChild(stage);
 
-    /* Statmeters in Visuals Panel */
-    var statMeters = el("statmeters") || document.querySelector("#statmeters");
+    var visScrollWrap = document.createElement("div");
+    visScrollWrap.id = "visuals-statmeters-wrap";
+
+    if (config.statsInVisuals && statsElem) {
+      visScrollWrap.appendChild(statsElem);
+    }
+
+    var statMeters = rescuedStatMeters || el("statmeters") || document.querySelector("#statmeters");
     if (statMeters) {
-      var headerDiv = document.createElement("div");
-      headerDiv.className = "dolp-statmeter-header";
+      var headerDiv = visScrollWrap.querySelector(".statmeter-header");
+      if (!headerDiv) {
+        headerDiv = document.createElement("div");
+        headerDiv.className = "statmeter-header";
 
-      var arrowBtn = document.createElement("button");
-      arrowBtn.className = "dolp-statmeter-arrow";
-      arrowBtn.textContent = config.statmetersCollapsed ? "▲" : "▼";
-      arrowBtn.title = "Toggle Horizontal Statmeter Badges";
-      arrowBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        config.statmetersCollapsed = !config.statmetersCollapsed;
+        var arrowBtn = document.createElement("button");
+        arrowBtn.className = "statmeter-arrow";
         arrowBtn.textContent = config.statmetersCollapsed ? "▲" : "▼";
-        statMeters.classList.toggle("dolp-statmeters-collapsed", !!config.statmetersCollapsed);
-        syncStatmeterColors();
-        saveConfig();
-        setTimeout(updateSidebarHeightVar, 0);
-        requestAnimationFrame(updateSidebarHeightVar);
-      });
+        arrowBtn.title = "Toggle Horizontal Statmeter Badges";
+        arrowBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          config.statmetersCollapsed = !config.statmetersCollapsed;
+          arrowBtn.textContent = config.statmetersCollapsed ? "▲" : "▼";
+          statMeters.classList.toggle("statmeters-collapsed", !!config.statmetersCollapsed);
+          syncStatmeterColors();
+          saveConfig();
+          setTimeout(updateSidebarHeightVar, 0);
+          requestAnimationFrame(updateSidebarHeightVar);
+        });
 
-      headerDiv.appendChild(arrowBtn);
+        headerDiv.appendChild(arrowBtn);
+      } else {
+        var existingBtn = headerDiv.querySelector(".statmeter-arrow");
+        if (existingBtn) existingBtn.textContent = config.statmetersCollapsed ? "▲" : "▼";
+      }
 
-      pVis.appendChild(headerDiv);
-      pVis.appendChild(statMeters);
+      visScrollWrap.appendChild(headerDiv);
+      visScrollWrap.appendChild(statMeters);
 
       statMeters.style.display = "block";
       statMeters.style.visibility = "visible";
-      statMeters.classList.toggle("dolp-statmeters-collapsed", !!config.statmetersCollapsed);
+      statMeters.classList.toggle("statmeters-collapsed", !!config.statmetersCollapsed);
       syncStatmeterColors();
     }
+
+    pVis.appendChild(visScrollWrap);
 
     /* 3. Mobile Stats */
     var mobStats = el("mobileStats") || document.querySelector("#mobileStats");
@@ -1719,18 +2444,21 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
     }
 
     /* 4. Attributes Panel */
-    if (captionContent) {
-      pAttr.appendChild(captionContent);
-      captionContent.style.display = "block";
-      captionContent.style.visibility = "visible";
+    if (rescuedCaptionContent || captionContent) {
+      var capToAppend = rescuedCaptionContent || captionContent;
+      pAttr.appendChild(capToAppend);
+      capToAppend.style.display = "block";
+      capToAppend.style.visibility = "visible";
 
-      var rawOverlay = captionContent.querySelector("#overlayButtons");
+      var rawOverlay = capToAppend.querySelector("#overlayButtons");
       if (rawOverlay) {
         rawOverlay.style.display = "none";
       }
     }
 
     var attrBtnList = [];
+    var setBtnList = [];
+
     allSourceBtns.forEach(function (btn) {
       var txt = (btn.textContent || "").toUpperCase().trim();
       if (!txt) return;
@@ -1740,85 +2468,365 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
         attrBtnList.push(btn);
       } else {
         btn.classList.add("macro-button");
-        setBtns.appendChild(btn);
+        setBtnList.push(btn);
       }
     });
 
     var charBtn = null;
-    var featBtn = null;
-    var midBtns = [];
+    var socialBtn = null;
+    var remainingAttrBtns = [];
 
     attrBtnList.forEach(function (b) {
       var txt = (b.textContent || "").toUpperCase().trim();
       if (txt.indexOf("CHARACTERISTICS") !== -1 || txt.indexOf("ATTRIBUTES") !== -1) {
         charBtn = b;
-      } else if (txt.indexOf("FEATS") !== -1) {
-        featBtn = b;
+      } else if (txt.indexOf("SOCIAL") !== -1) {
+        socialBtn = b;
       } else {
-        midBtns.push(b);
+        remainingAttrBtns.push(b);
       }
     });
 
     if (charBtn) {
-      charBtn.classList.add("dolp-btn-full");
+      charBtn.classList.add("btn-full");
       attrBtns.appendChild(charBtn);
     }
 
-    midBtns.forEach(function (b) {
-      b.classList.remove("dolp-btn-full");
+    if (socialBtn) {
+      socialBtn.classList.add("btn-full");
+      attrBtns.appendChild(socialBtn);
+    }
+
+    var isOddRemainingAttr = (remainingAttrBtns.length % 2 !== 0);
+    remainingAttrBtns.forEach(function (b, index) {
+      if (isOddRemainingAttr && index === 0) {
+        b.classList.add("btn-full");
+      } else {
+        b.classList.remove("btn-full");
+      }
       attrBtns.appendChild(b);
     });
 
-    if (featBtn) {
-      featBtn.classList.add("dolp-btn-full");
-      attrBtns.appendChild(featBtn);
-    }
-
     pAttr.appendChild(attrBtns);
 
-    /* 5. Settings Panel */
-    var uiSettingsBtn = document.createElement("button");
-    uiSettingsBtn.id = "dolp-ui-settings-btn";
-    uiSettingsBtn.className = "macro-button";
-    uiSettingsBtn.textContent = "UI SETTINGS";
-    uiSettingsBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      openUISettingsOverlay();
+    /* 5. Settings Panel Layout */
+    var uiSettingsBtn = existingUISetBtn;
+    if (!uiSettingsBtn) {
+      uiSettingsBtn = document.createElement("button");
+      uiSettingsBtn.id = "ui-settings-btn";
+      uiSettingsBtn.className = "macro-button btn-full";
+      uiSettingsBtn.textContent = "UI SETTINGS";
+      uiSettingsBtn.style.color = "var(--accent)";
+      uiSettingsBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        openUISettingsOverlay();
+      });
+    } else {
+      uiSettingsBtn.className = "macro-button btn-full";
+      uiSettingsBtn.style.color = "var(--accent)";
+    }
+
+    setBtns.appendChild(uiSettingsBtn);
+
+    var optionsSetBtn = null;
+    var savesSetBtn = null;
+    var otherSetBtns = [];
+
+    setBtnList.forEach(function (b) {
+      var txt = (b.textContent || "").toUpperCase().trim();
+      if (txt.indexOf("OPTION") !== -1) {
+        optionsSetBtn = b;
+      } else if (txt.indexOf("SAVE") !== -1) {
+        savesSetBtn = b;
+      } else {
+        otherSetBtns.push(b);
+      }
     });
 
-    pSet.appendChild(uiSettingsBtn);
+    var isOddMiddleSet = (otherSetBtns.length % 2 !== 0);
+    otherSetBtns.forEach(function (b, index) {
+      if (isOddMiddleSet && index === 0) {
+        b.classList.add("btn-full");
+      } else {
+        b.classList.remove("btn-full");
+      }
+      setBtns.appendChild(b);
+    });
+
+    if (optionsSetBtn) {
+      optionsSetBtn.classList.remove("btn-full");
+      setBtns.appendChild(optionsSetBtn);
+    }
+    if (savesSetBtn) {
+      savesSetBtn.classList.remove("btn-full");
+      setBtns.appendChild(savesSetBtn);
+    }
+
     pSet.appendChild(setBtns);
 
     wireOriginalToggle();
     applyStates();
     applyConfig();
+    scheduleStageHeightRetries();
+  }
+
+  // ---------------------------------------------------------------------
+  // Custom color picker. Native <input type="color"> looks/behaves fine
+  // in a PC browser but renders very differently (and often worse) on
+  // Android APK/WebView, since it just delegates to whatever picker the
+  // platform provides. This draws our own SV square + hue slider + hex
+  // field so it looks and behaves identically everywhere, using Pointer
+  // Events so mouse, touch and pen all work the same way.
+  // ---------------------------------------------------------------------
+
+  function createColorPopup(initialHex, onChange, onClose) {
+    var hsv = hexToHsv(initialHex);
+
+    var backdrop = document.createElement("div");
+    backdrop.className = "cp-backdrop";
+
+    var popup = document.createElement("div");
+    popup.className = "cp-popup";
+    popup.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+
+    var title = document.createElement("div");
+    title.className = "cp-title";
+    title.textContent = "Pick a Color";
+    popup.appendChild(title);
+
+    var sv = document.createElement("div");
+    sv.className = "cp-sv";
+    var svCursor = document.createElement("div");
+    svCursor.className = "cp-sv-cursor";
+    sv.appendChild(svCursor);
+    popup.appendChild(sv);
+
+    var hue = document.createElement("div");
+    hue.className = "cp-hue";
+    var hueCursor = document.createElement("div");
+    hueCursor.className = "cp-hue-cursor";
+    hue.appendChild(hueCursor);
+    popup.appendChild(hue);
+
+    var bottomRow = document.createElement("div");
+    bottomRow.className = "cp-bottom-row";
+
+    var preview = document.createElement("div");
+    preview.className = "cp-preview";
+
+    var hexInput = document.createElement("input");
+    hexInput.type = "text";
+    hexInput.className = "cp-hex-input";
+    hexInput.maxLength = 7;
+    hexInput.autocapitalize = "characters";
+    hexInput.spellcheck = false;
+
+    var doneBtn = document.createElement("button");
+    doneBtn.type = "button";
+    doneBtn.className = "cp-done-btn";
+    doneBtn.textContent = "Done";
+
+    bottomRow.appendChild(preview);
+    bottomRow.appendChild(hexInput);
+    bottomRow.appendChild(doneBtn);
+    popup.appendChild(bottomRow);
+
+    backdrop.appendChild(popup);
+    document.body.appendChild(backdrop);
+
+    function currentHex() {
+      var rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+      return rgbToHex(rgb.r, rgb.g, rgb.b);
+    }
+
+    function render(skipHexInput) {
+      var hex = currentHex();
+      var pureHueHex = rgbToHex.apply(null, (function () {
+        var rgb = hsvToRgb(hsv.h, 1, 1);
+        return [rgb.r, rgb.g, rgb.b];
+      })());
+
+      sv.style.background = "linear-gradient(to top, #000, rgba(0,0,0,0)), " +
+        "linear-gradient(to right, #fff, rgba(255,255,255,0)), " + pureHueHex;
+
+      var svRect = { w: sv.clientWidth || 1, h: sv.clientHeight || 1 };
+      svCursor.style.left = (hsv.s * svRect.w) + "px";
+      svCursor.style.top = ((1 - hsv.v) * svRect.h) + "px";
+
+      var hueRect = { w: hue.clientWidth || 1 };
+      hueCursor.style.left = ((hsv.h / 360) * hueRect.w) + "px";
+
+      preview.style.backgroundColor = hex;
+      if (!skipHexInput) hexInput.value = hex.toUpperCase();
+
+      onChange(hex);
+    }
+
+    function makeDraggable(el, handler) {
+      var dragging = false;
+      function pos(e) {
+        var r = el.getBoundingClientRect();
+        var x = Math.max(0, Math.min(r.width, e.clientX - r.left));
+        var y = Math.max(0, Math.min(r.height, e.clientY - r.top));
+        return { x: x, y: y, w: r.width || 1, h: r.height || 1 };
+      }
+      el.addEventListener("pointerdown", function (e) {
+        dragging = true;
+        el.setPointerCapture(e.pointerId);
+        handler(pos(e));
+        e.preventDefault();
+      });
+      el.addEventListener("pointermove", function (e) {
+        if (!dragging) return;
+        handler(pos(e));
+      });
+      function stop(e) {
+        if (!dragging) return;
+        dragging = false;
+        try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+      el.addEventListener("pointerup", stop);
+      el.addEventListener("pointercancel", stop);
+    }
+
+    makeDraggable(sv, function (p) {
+      hsv.s = p.x / p.w;
+      hsv.v = 1 - (p.y / p.h);
+      render();
+    });
+
+    makeDraggable(hue, function (p) {
+      hsv.h = (p.x / p.w) * 360;
+      render();
+    });
+
+    hexInput.addEventListener("input", function () {
+      var h = normalizeHex(hexInput.value);
+      if (!h) return;
+      hsv = hexToHsv(h);
+      render(true);
+    });
+
+    function close() {
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+      document.removeEventListener("keydown", onKeydown);
+      if (onClose) onClose();
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") close();
+    }
+
+    backdrop.addEventListener("pointerdown", close);
+    doneBtn.addEventListener("pointerdown", function (e) { e.stopPropagation(); close(); });
+    document.addEventListener("keydown", onKeydown);
+
+    render();
+
+    return {
+      close: close,
+      setHex: function (hex) {
+        hsv = hexToHsv(hex);
+        render();
+      }
+    };
+  }
+
+  function buildColorField(initialHex, onChange) {
+    var wrap = document.createElement("div");
+    wrap.className = "cp-field";
+
+    var swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "cp-swatch";
+    swatch.setAttribute("aria-label", "Choose color");
+
+    var hiddenInput = document.createElement("input");
+    hiddenInput.type = "color";
+    hiddenInput.tabIndex = -1;
+    hiddenInput.className = "cp-hidden-input";
+    hiddenInput.setAttribute("aria-hidden", "true");
+
+    var state = { hex: normalizeHex(initialHex) || "#ffd700" };
+    var popupApi = null;
+
+    function applyVisual(hex) {
+      swatch.style.backgroundColor = hex;
+    }
+
+    Object.defineProperty(hiddenInput, "value", {
+      get: function () { return state.hex; },
+      set: function (v) {
+        var h = normalizeHex(v);
+        if (!h) return;
+        state.hex = h;
+        applyVisual(h);
+        if (popupApi) popupApi.setHex(h);
+      },
+      configurable: true
+    });
+
+    applyVisual(state.hex);
+
+    swatch.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (popupApi) return;
+      popupApi = createColorPopup(state.hex, function (hex) {
+        state.hex = hex;
+        applyVisual(hex);
+        onChange(hex);
+      }, function () {
+        popupApi = null;
+      });
+    });
+
+    wrap.appendChild(swatch);
+    wrap.appendChild(hiddenInput);
+    return wrap;
   }
 
   function createCustomRow(labelText, type, currentVal, onChange) {
     var div = document.createElement("div");
-    div.className = "dolp-custom-row";
+    div.className = "custom-row";
 
     var lbl = document.createElement("label");
     lbl.textContent = labelText;
+    div.appendChild(lbl);
+
+    if (type === "color") {
+      if (isMobileDevice()) {
+        div.appendChild(buildColorField(currentVal || "#ffd700", onChange));
+      } else {
+        var inputColor = document.createElement("input");
+        inputColor.type = "color";
+        inputColor.value = currentVal || "#ffd700";
+        inputColor.addEventListener("change", function () {
+          onChange(inputColor.value);
+        });
+        inputColor.addEventListener("input", function () {
+          onChange(inputColor.value);
+        });
+        div.appendChild(inputColor);
+      }
+      return div;
+    }
 
     var input = document.createElement("input");
     input.type = type;
     if (type === "checkbox") input.checked = !!currentVal;
-    else if (type === "color") input.value = currentVal || "#ffd700";
 
     input.addEventListener("change", function () {
       onChange(type === "checkbox" ? input.checked : input.value);
     });
 
-    div.appendChild(lbl);
     div.appendChild(input);
     return div;
   }
 
   function createCustomSelect(labelText, options, currentVal, onChange) {
     var div = document.createElement("div");
-    div.className = "dolp-custom-row";
+    div.className = "custom-row";
 
     var lbl = document.createElement("label");
     lbl.textContent = labelText;
@@ -1841,22 +2849,25 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
     return div;
   }
 
+  /* Sideview Implementation */
   var mirrorPairs = [];
   var rafRunning  = false;
   var rebuildTimer = null;
   var skyObserved  = false;
 
   function ensureSVHost() {
-    var host = el("dolp-sv-host");
+    var host = el("sv-host");
     if (!host) {
       host = document.createElement("div");
-      host.id = "dolp-sv-host";
+      host.id = "sv-host";
       var inner = document.createElement("div");
-      inner.id = "dolp-sv-inner";
+      inner.id = "sv-inner";
       host.appendChild(inner);
       document.body.appendChild(host);
     }
-    host.style.display = config.sideviewEnabled ? "block" : "none";
+    var svOpacity = (typeof config.sideviewOpacity !== "undefined") ? parseInt(config.sideviewOpacity, 10) : 100;
+    var sideviewActive = config.sideviewEnabled && (svOpacity > 0);
+    host.style.display = sideviewActive ? "block" : "none";
   }
 
   function getBodyZoom() {
@@ -1876,17 +2887,20 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
   }
 
   function sizeSV() {
-    var inner = el("dolp-sv-inner");
-    var host = el("dolp-sv-host");
+    var inner = el("sv-inner");
+    var host = el("sv-host");
     if (!inner || !host) return;
 
-    if (!config.sideviewEnabled) {
+    var opacityVal = (typeof config.sideviewOpacity !== "undefined") ? parseInt(config.sideviewOpacity, 10) : 100;
+    var sideviewActive = config.sideviewEnabled && (opacityVal > 0);
+
+    if (!sideviewActive) {
       host.style.display = "none";
       return;
     }
     host.style.display = "block";
 
-    var opacity = (typeof config.sideviewOpacity !== "undefined" ? config.sideviewOpacity : 100) / 100;
+    var opacity = opacityVal / 100;
     inner.style.opacity = opacity;
 
     if (config.sideviewSide === "left") {
@@ -1924,15 +2938,18 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
   }
 
   function rebuildMirror() {
-    if (!config.sideviewEnabled) {
-      var h = el("dolp-sv-host");
+    var opacityVal = (typeof config.sideviewOpacity !== "undefined") ? parseInt(config.sideviewOpacity, 10) : 100;
+    var sideviewActive = config.sideviewEnabled && (opacityVal > 0);
+
+    if (!sideviewActive) {
+      var h = el("sv-host");
       if (h) h.style.display = "none";
       return;
     }
 
     var src = el("canvasSkybox");
     ensureSVHost();
-    var inner = el("dolp-sv-inner");
+    var inner = el("sv-inner");
     if (!src || !inner) return;
 
     var clone = src.cloneNode(true);
@@ -1957,19 +2974,28 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
   }
 
   function mirrorLoop() {
-    if (config.sideviewEnabled) {
+    var opacityVal = (typeof config.sideviewOpacity !== "undefined") ? parseInt(config.sideviewOpacity, 10) : 100;
+    var sideviewActive = config.sideviewEnabled && (opacityVal > 0);
+
+    if (sideviewActive && mirrorPairs.length > 0) {
       sizeSV();
       for (var i = 0; i < mirrorPairs.length; i++) {
-        var s = mirrorPairs[i][0], d = mirrorPairs[i][1];
-        if (!s.isConnected) continue;
+        var pair = mirrorPairs[i];
+        if (!pair) continue;
+        var s = pair[0], d = pair[1];
+        if (!s || !d || !s.isConnected) continue;
+        if (s.width === 0 || s.height === 0) continue;
         if (d.width  !== s.width)  d.width  = s.width;
         if (d.height !== s.height) d.height = s.height;
         var ctx = d.getContext("2d");
         if (!ctx) continue;
-        ctx.clearRect(0, 0, d.width, d.height);
-        try { ctx.drawImage(s, 0, 0); } catch (_) {}
+        try {
+          ctx.clearRect(0, 0, d.width, d.height);
+          ctx.drawImage(s, 0, 0);
+        } catch (_) {}
       }
     }
+    rafRunning = true;
     requestAnimationFrame(mirrorLoop);
   }
 
@@ -2002,6 +3028,7 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
         console.warn("[ImmersiveTabs] sync error:", err);
       } finally {
         isSyncing = false;
+        requestAnimationFrame(updateSidebarHeightVar);
       }
       return;
     }
@@ -2017,16 +3044,48 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
         console.warn("[ImmersiveTabs] sync error:", err);
       } finally {
         isSyncing = false;
+        requestAnimationFrame(updateSidebarHeightVar);
       }
     }, 30);
   }
 
+  function scheduleSyncRetries() {
+    requestSync(true);
+    setTimeout(function () { requestSync(false); }, 50);
+    setTimeout(function () { requestSync(false); }, 150);
+    setTimeout(function () { requestSync(false); }, 300);
+    setTimeout(function () { requestSync(false); }, 600);
+    setTimeout(function () { requestSync(false); }, 1000);
+  }
+
+  function watchDOMChanges() {
+    if (typeof MutationObserver === "undefined") return;
+    var target = el("ui-bar") || el("storyCaptionDiv") || document.body;
+    if (!target || target.dataset.modObserverWired) return;
+    target.dataset.modObserverWired = "1";
+
+    new MutationObserver(function (mutations) {
+      if (!config.useModUI || isSyncing) return;
+      var hasAddedNodes = false;
+      for (var i = 0; i < mutations.length; i++) {
+        if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+          hasAddedNodes = true;
+          break;
+        }
+      }
+      if (hasAddedNodes) {
+        requestSync(false);
+      }
+    }).observe(target, { childList: true, subtree: true });
+  }
+
   function relayout(immediate) {
-    requestSync(immediate);
+    scheduleSyncRetries();
     ensureSVHost();
     if (!mirrorPairs.length) rebuildMirror();
     else scheduleMirrorRebuild();
     watchSkybox();
+    watchDOMChanges();
   }
 
   function boot() {
@@ -2034,24 +3093,40 @@ var attrKeywords = ["CHARACTERISTICS", "ATTRIBUTES", "SOCIAL", "TRAITS", "JOURNA
     applyConfig();
 
     if (typeof $ === "function") {
-      $(document).on(":passagerender", function () { relayout(true); });
-      $(document).on(":passageend",    function () { relayout(true); });
+      $(document).on(":passageend", function () { relayout(true); });
+      $(document).on(":oncloseoverlay", (_e, overlay) => {
+        if (overlay === "characteristics") {
+          var characteristicsImg = document.querySelector('#customOverlay [id="img"]');
+          if (characteristicsImg) {
+              characteristicsImg.id = "characteristics-img";
+          }
+        }
+      });
+      $(document).on(":dialogopened", function () {
+        var overlay = el("ui-settings-overlay-container");
+        if (overlay) overlay.classList.add("hidden");
+      });
     } else {
-      document.addEventListener(":passagerender", function () { relayout(true); });
-      document.addEventListener(":passageend",    function () { relayout(true); });
+      document.addEventListener(":passageend", function () { relayout(true); });
     }
 
-    if (typeof MutationObserver !== "undefined" && document.body) {
-      new MutationObserver(function () {
-        sizeSV();
-        applySidebarFontOptions();
-      }).observe(document.body, { attributes: true, attributeFilter: ["style"] });
+    if (typeof MutationObserver !== "undefined") {
+      var passageTarget = el("passages") || el("story") || document.querySelector("#passages, #story, body");
+      if (passageTarget) {
+        new MutationObserver(function () {
+          if (!config.useModUI || isSyncing) return;
+          sizeSV();
+          applySidebarFontOptions();
+        }).observe(passageTarget, { childList: true, subtree: true });
+      }
     }
 
+    wireGlobalSwipe();
     relayout(true);
     window.addEventListener("resize", function () {
       sizeSV();
       updateSidebarHeightVar();
+      scheduleStageHeightRetries();
     });
   }
 
